@@ -298,6 +298,7 @@ function enemyFire(enemy, player, time, gameObject)
             bullet.fire(enemy, player);
             // Add collider between bullet and player
             gameObject.physics.add.collider(player, bullet, playerHitCallback);
+            shootSFX.play()
         }
     }
 }
