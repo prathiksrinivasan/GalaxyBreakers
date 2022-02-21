@@ -130,6 +130,7 @@ function create ()
     this.cameras.main.zoom = 0.5;
     this.cameras.main.startFollow(player);
 
+    /* OLD MOVEMENT CODE >>>
     // Creates object for input with WASD kets
     moveKeys = this.input.keyboard.addKeys({
         'up': Phaser.Input.Keyboard.KeyCodes.W,
@@ -169,6 +170,17 @@ function create ()
         if (moveKeys['left'].isUp)
             player.setAccelerationX(0);
     });
+    */
+    
+    //NEW MOVEMENT -------------------------------------
+    player.setFrictionX(100);
+    player.setFrictionY(100);
+    this.cursors = this.input.keyboard.addKeys(
+        {up:Phaser.Input.Keyboard.KeyCodes.W,
+         down:Phaser.Input.Keyboard.KeyCodes.S,
+         left:Phaser.Input.Keyboard.KeyCodes.A,
+         right:Phaser.Input.Keyboard.KeyCodes.D});
+    
 
     // Fires bullet from player on left click of mouse
     this.input.on('pointerdown', function (pointer, time, lastFired) {
@@ -336,4 +348,24 @@ function update (time, delta)
 
     // Make enemy fire
     enemyFire(enemy, player, time, this);
+    
+    //NEW MOVEMENT -------------------------------------
+    if(this.cursors.up.isDown){
+        player.setAccelerationY(-800)
+    }
+    if(this.cursors.down.isDown){
+        player.setAccelerationY(800)
+    }
+    if(this.cursors.up.isUp && this.cursors.down.isUp){
+        player.setAccelerationY(0)
+    }
+    if(this.cursors.left.isDown){
+        player.setAccelerationX(-800)
+    }
+    if(this.cursors.right.isDown){
+        player.setAccelerationX(800)
+    }
+    if(this.cursors.right.isUp && this.cursors.left.isUp){
+        player.setAccelerationX(0)
+    }
 }
