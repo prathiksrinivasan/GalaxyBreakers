@@ -92,6 +92,10 @@ function preload ()
     this.load.image('bullet', 'Assets/Sprites/bullet.png');
     this.load.image('target', 'Assets/Sprites/reticle.png');
     this.load.image('background', 'Assets/Sprites/spaceBG.jpg');
+    
+    this.load.audio('shoot', 'Assets/Sound/Shoot.wav')
+    this.load.audio('hit', 'Assets/Sound/Hit.wav')
+    this.load.audio('death', 'Assets/Sound/Death.wav')
 }
 
 function create ()
@@ -129,6 +133,11 @@ function create ()
     // Set camera properties
     this.cameras.main.zoom = 0.5;
     this.cameras.main.startFollow(player);
+    
+    // Set SFX
+    shootSFX = this.sound.add("shoot", {loop: false});
+    hitSFX = this.sound.add("hit", {loop: false});
+    deathSFX = this.sound.add("death", {loop: false});
 
     /* OLD MOVEMENT CODE >>>
     // Creates object for input with WASD kets
@@ -200,6 +209,7 @@ function create ()
     // Pointer lock will only work after mousedown
     game.canvas.addEventListener('mousedown', function () {
         game.input.mouse.requestPointerLock();
+        shootSFX.play();
     });
 
     // Exit pointer lock when Q or escape (by default) is pressed.
@@ -226,11 +236,13 @@ function enemyHitCallback(enemyHit, bulletHit)
     {
         enemyHit.health = enemyHit.health - 1;
         console.log("Enemy hp: ", enemyHit.health);
+        hitSFX.play();
 
         // Kill enemy if health <= 0
         if (enemyHit.health <= 0)
         {
            enemyHit.setActive(false).setVisible(false);
+            deathSFX.play();
         }
 
         // Destroy bullet
@@ -245,6 +257,7 @@ function playerHitCallback(playerHit, bulletHit)
     {
         playerHit.health = playerHit.health - 1;
         console.log("Player hp: ", playerHit.health);
+        hitSFX.play();
 
         // Kill hp sprites and kill player if health <= 0
         if (playerHit.health == 2)
