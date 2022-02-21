@@ -86,11 +86,11 @@ var Bullet = new Phaser.Class({
 function preload ()
 {
     // Load in images and sprites
-    this.load.spritesheet('player_handgun', 'Assets/Sprites/player_handgun.png',
+    this.load.spritesheet('player_handgun', 'Assets/Sprites/wipGunner.png',
         { frameWidth: 66, frameHeight: 60 }
     ); // Made by tokkatrain: https://tokkatrain.itch.io/top-down-basic-set
-    this.load.image('bullet', 'Assets/Sprites/bullet6.png');
-    this.load.image('target', 'Assets/Sprites/ball.png');
+    this.load.image('bullet', 'Assets/Sprites/bullet.png');
+    this.load.image('target', 'Assets/Sprites/reticle.png');
     this.load.image('background', 'Assets/Sprites/spaceBG.jpg');
 }
 
