@@ -91,7 +91,7 @@ function preload ()
     ); // Made by tokkatrain: https://tokkatrain.itch.io/top-down-basic-set
     this.load.image('bullet', 'Assets/Sprites/bullet.png');
     this.load.image('target', 'Assets/Sprites/reticle.png');
-    this.load.image('background', 'Assets/Sprites/spaceBG.jpg');
+    this.load.image('background', 'Assets/Sprites/spaceBGNew.jpg');
     
     this.load.audio('shoot', 'Assets/Sound/Shoot.wav')
     this.load.audio('hit', 'Assets/Sound/Hit.wav')
@@ -101,7 +101,7 @@ function preload ()
 function create ()
 {
     // Set world bounds
-    this.physics.world.setBounds(0, 0, 1600, 1200);
+    this.physics.world.setBounds(0, 0, 3564, 2005);
 
     // Add 2 groups for Bullet objects
     playerBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true });
@@ -117,7 +117,7 @@ function create ()
     hp3 = this.add.image(-250, -250, 'target').setScrollFactor(0.5, 0.5);
 
     // Set image/sprite properties
-    background.setOrigin(0.5, 0.5).setDisplaySize(1600, 1200);
+    background.setOrigin(0.5, 0.5).setDisplaySize(3564, 2005);
     player.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true).setDrag(500, 500);
     enemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
     reticle.setOrigin(0.5, 0.5).setDisplaySize(25, 25).setCollideWorldBounds(true);
