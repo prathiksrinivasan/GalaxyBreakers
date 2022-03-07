@@ -91,17 +91,21 @@ function preload ()
     ); // Made by tokkatrain: https://tokkatrain.itch.io/top-down-basic-set
     this.load.image('bullet', 'Assets/Sprites/bullet.png');
     this.load.image('target', 'Assets/Sprites/reticle.png');
-    this.load.image('background', 'Assets/Sprites/spaceBGNew.jpg');
+    this.load.image('background', 'Assets/Sprites/spaceBG.jpg');
+    this.load.image('heart', 'Assets/Sprites/heart.png');
+    this.load.image('loss', 'Assets/Sprites/loss.png');
     
     this.load.audio('shoot', 'Assets/Sound/Shoot.wav')
     this.load.audio('hit', 'Assets/Sound/Hit.wav')
     this.load.audio('death', 'Assets/Sound/Death.wav')
+    
+    this.load.image('tutorial', 'Assets/Sprites/tutorialBlock.png')
 }
 
 function create ()
 {
     // Set world bounds
-    this.physics.world.setBounds(0, 0, 3564, 2005);
+    this.physics.world.setBounds(0, 0, 3000, 2000);
 
     // Add 2 groups for Bullet objects
     playerBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true });
@@ -111,24 +115,33 @@ function create ()
     var background = this.add.image(800, 600, 'background');
     player = this.physics.add.sprite(800, 600, 'player_handgun');
     enemy = this.physics.add.sprite(300, 600, 'player_handgun');
+    enemy2 = this.physics.add.sprite(1400, 800, 'player_handgun');
     reticle = this.physics.add.sprite(800, 700, 'target');
-    hp1 = this.add.image(-350, -250, 'target').setScrollFactor(0.5, 0.5);
-    hp2 = this.add.image(-300, -250, 'target').setScrollFactor(0.5, 0.5);
-    hp3 = this.add.image(-250, -250, 'target').setScrollFactor(0.5, 0.5);
+    hp1 = this.add.image(-350, -250, 'heart').setScrollFactor(0, 0);
+    hp2 = this.add.image(-300, -250, 'heart').setScrollFactor(0, 0);
+    hp3 = this.add.image(-250, -250, 'heart').setScrollFactor(0, 0);
 
     // Set image/sprite properties
-    background.setOrigin(0.5, 0.5).setDisplaySize(3564, 2005);
+    background.setOrigin(0.5, 0.5).setDisplaySize(3000, 2000);
     player.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true).setDrag(500, 500);
     enemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
+    enemy2.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
     reticle.setOrigin(0.5, 0.5).setDisplaySize(25, 25).setCollideWorldBounds(true);
+    
     hp1.setOrigin(0.5, 0.5).setDisplaySize(50, 50);
     hp2.setOrigin(0.5, 0.5).setDisplaySize(50, 50);
     hp3.setOrigin(0.5, 0.5).setDisplaySize(50, 50);
+    
+    //set colliders
+    this.physics.add.collider(player, enemy);
+    this.physics.add.collider(player, enemy2);
 
     // Set sprite variables
     player.health = 3;
     enemy.health = 3;
     enemy.lastFired = 0;
+    enemy2.health = 3;
+    enemy2.lastFired = 0;
 
     // Set camera properties
     this.cameras.main.zoom = 0.5;
@@ -138,48 +151,6 @@ function create ()
     shootSFX = this.sound.add("shoot", {loop: false});
     hitSFX = this.sound.add("hit", {loop: false});
     deathSFX = this.sound.add("death", {loop: false});
-
-    /* OLD MOVEMENT CODE >>>
-    // Creates object for input with WASD kets
-    moveKeys = this.input.keyboard.addKeys({
-        'up': Phaser.Input.Keyboard.KeyCodes.W,
-        'down': Phaser.Input.Keyboard.KeyCodes.S,
-        'left': Phaser.Input.Keyboard.KeyCodes.A,
-        'right': Phaser.Input.Keyboard.KeyCodes.D
-    });
-
-    // Enables movement of player with WASD keys
-    this.input.keyboard.on('keydown_W', function (event) {
-        player.setAccelerationY(-800);
-    });
-    this.input.keyboard.on('keydown_S', function (event) {
-        player.setAccelerationY(800);
-    });
-    this.input.keyboard.on('keydown_A', function (event) {
-        player.setAccelerationX(-800);
-    });
-    this.input.keyboard.on('keydown_D', function (event) {
-        player.setAccelerationX(800);
-    });
-
-    // Stops player acceleration on uppress of WASD keys
-    this.input.keyboard.on('keyup_W', function (event) {
-        if (moveKeys['down'].isUp)
-            player.setAccelerationY(0);
-    });
-    this.input.keyboard.on('keyup_S', function (event) {
-        if (moveKeys['up'].isUp)
-            player.setAccelerationY(0);
-    });
-    this.input.keyboard.on('keyup_A', function (event) {
-        if (moveKeys['right'].isUp)
-            player.setAccelerationX(0);
-    });
-    this.input.keyboard.on('keyup_D', function (event) {
-        if (moveKeys['left'].isUp)
-            player.setAccelerationX(0);
-    });
-    */
     
     //NEW MOVEMENT -------------------------------------
     player.setFrictionX(100);
@@ -203,6 +174,7 @@ function create ()
         {
             bullet.fire(player, reticle);
             this.physics.add.collider(enemy, bullet, enemyHitCallback);
+            this.physics.add.collider(enemy2, bullet, enemyHitCallback);
         }
     }, this);
 
@@ -226,7 +198,13 @@ function create ()
             reticle.y += pointer.movementY;
         }
     }, this);
-
+    
+    // tutorial screen functionality WILL REQUIRE SCENE CHANGE. RECONFIG CODE TO SCENES BEFORE IMPLEMENTATION
+    //var tutorial = this.add.image(800, 600, 'tutorial');
+    
+    //game ui
+    
+    
 }
 
 function enemyHitCallback(enemyHit, bulletHit)
@@ -349,6 +327,7 @@ function update (time, delta)
 
     // Rotates enemy to face towards player
     enemy.rotation = Phaser.Math.Angle.Between(enemy.x, enemy.y, player.x, player.y);
+    enemy2.rotation = Phaser.Math.Angle.Between(enemy2.x, enemy2.y, player.x, player.y);
 
     //Make reticle move with player
     reticle.body.velocity.x = player.body.velocity.x;
@@ -362,6 +341,7 @@ function update (time, delta)
 
     // Make enemy fire
     enemyFire(enemy, player, time, this);
+    enemyFire(enemy2, player, time, this);
     
     //NEW MOVEMENT -------------------------------------
     if(this.cursors.up.isDown){
@@ -381,5 +361,10 @@ function update (time, delta)
     }
     if(this.cursors.right.isUp && this.cursors.left.isUp){
         player.setAccelerationX(0)
+    }
+    
+    if(player.health <= 0){
+        loss = this.add.image(400, 300, 'loss').setScrollFactor(0, 0);
+        game.scene.pause("default");
     }
 }
