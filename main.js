@@ -102,6 +102,12 @@ function preload ()
     this.load.image('tutorial', 'Assets/Sprites/tutorialBlock.png')
 }
 
+var maxEnemies;
+var currentEnemies;
+var activeEnemies;
+var enemies = [];
+var start = false;
+
 function create ()
 {
     // Set world bounds
@@ -112,10 +118,10 @@ function create ()
     enemyBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true });
 
     // Add background player, enemy, reticle, healthpoint sprites
-    var background = this.add.image(800, 600, 'background');
+    var background = this.add.image(1500, 1000, 'background');
     player = this.physics.add.sprite(800, 600, 'player_handgun');
-    enemy = this.physics.add.sprite(300, 600, 'player_handgun');
-    enemy2 = this.physics.add.sprite(1400, 800, 'player_handgun');
+    //enemy = this.physics.add.sprite(300, 600, 'player_handgun');
+    //enemy2 = this.physics.add.sprite(1400, 800, 'player_handgun');
     reticle = this.physics.add.sprite(800, 700, 'target');
     hp1 = this.add.image(-350, -250, 'heart').setScrollFactor(0, 0);
     hp2 = this.add.image(-300, -250, 'heart').setScrollFactor(0, 0);
@@ -124,8 +130,24 @@ function create ()
     // Set image/sprite properties
     background.setOrigin(0.5, 0.5).setDisplaySize(3000, 2000);
     player.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true).setDrag(500, 500);
-    enemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
-    enemy2.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
+    //var enemies = [];
+    maxEnemies = 5;
+    currentEnemies = 0;
+    activeEnemies = 0;
+    //create list of a certain amount of enemies, assign health/position/etc values
+    for(var i = 0; i<maxEnemies; i++){
+        newEnemy = this.physics.add.sprite(Phaser.Math.Between(100, 2900),Phaser.Math.Between(100, 1900),'player_handgun');
+        newEnemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
+        newEnemy.fireRate = Phaser.Math.Between(3000, 6000);
+        newEnemy.lastFired = 0;
+        newEnemy.health = 1;
+        this.physics.add.collider(player, newEnemy);
+        enemies.push(newEnemy);
+        currentEnemies++;
+        activeEnemies++;
+    }
+    //enemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
+    //enemy2.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
     reticle.setOrigin(0.5, 0.5).setDisplaySize(25, 25).setCollideWorldBounds(true);
     
     hp1.setOrigin(0.5, 0.5).setDisplaySize(50, 50);
@@ -133,19 +155,20 @@ function create ()
     hp3.setOrigin(0.5, 0.5).setDisplaySize(50, 50);
     
     //set colliders
-    this.physics.add.collider(player, enemy);
-    this.physics.add.collider(player, enemy2);
+    //this.physics.add.collider(player, enemy);
+    //this.physics.add.collider(player, enemy2);
 
     // Set sprite variables
     player.health = 3;
-    enemy.health = 3;
-    enemy.lastFired = 0;
-    enemy2.health = 3;
-    enemy2.lastFired = 0;
+    //enemy.health = 3;
+    //enemy.lastFired = 0;
+    //enemy2.health = 3;
+    //enemy2.lastFired = 0;
 
     // Set camera properties
     this.cameras.main.zoom = 0.5;
     this.cameras.main.startFollow(player);
+    //this.camera.deadzone = new Phaser.Rectangle(300, 300, 400, 300);
     
     // Set SFX
     shootSFX = this.sound.add("shoot", {loop: false});
@@ -173,8 +196,9 @@ function create ()
         if (bullet)
         {
             bullet.fire(player, reticle);
-            this.physics.add.collider(enemy, bullet, enemyHitCallback);
-            this.physics.add.collider(enemy2, bullet, enemyHitCallback);
+            for(var i = 0; i<currentEnemies; i++){    
+                this.physics.add.collider(enemies[i], bullet, enemyHitCallback);
+            }
         }
     }, this);
 
@@ -219,8 +243,13 @@ function enemyHitCallback(enemyHit, bulletHit)
         // Kill enemy if health <= 0
         if (enemyHit.health <= 0)
         {
-           enemyHit.setActive(false).setVisible(false);
+            //currentEnemies--;
+            activeEnemies--;
+            console.log(activeEnemies);
+            enemyHit.setActive(false).setVisible(false);
             deathSFX.play();
+            //enemies.splice(enemies.indexOf(enemyHit));
+            
         }
 
         // Destroy bullet
@@ -264,7 +293,7 @@ function enemyFire(enemy, player, time, gameObject)
         return;
     }
 
-    if ((time - enemy.lastFired) > 1000)
+    if ((time - enemy.lastFired) > enemy.fireRate)
     {
         enemy.lastFired = time;
 
@@ -322,13 +351,33 @@ function constrainReticle(reticle)
 
 function update (time, delta)
 {
+    
     // Rotates player to face towards reticle
     player.rotation = Phaser.Math.Angle.Between(player.x, player.y, reticle.x, reticle.y);
 
     // Rotates enemy to face towards player
-    enemy.rotation = Phaser.Math.Angle.Between(enemy.x, enemy.y, player.x, player.y);
-    enemy2.rotation = Phaser.Math.Angle.Between(enemy2.x, enemy2.y, player.x, player.y);
-
+    for(var i = 0; i<currentEnemies; i++){    
+        //console.log(currentEnemies);
+        //if(enemies[i].active == true){
+            enemies[i].rotation = Phaser.Math.Angle.Between(enemies[i].x, enemies[i].y, player.x, player.y);
+            enemyFire(enemies[i],player,time,this);
+        //}
+    }
+    //enemy2.rotation = Phaser.Math.Angle.Between(enemy2.x, enemy2.y, player.x, player.y);
+    
+    //spawns new enemies as enemies are killed
+    if(activeEnemies < maxEnemies){
+            //console.log(currentEnemies);
+            newEnemy = this.physics.add.sprite(Phaser.Math.Between(100, 2900),Phaser.Math.Between(100, 1900),'player_handgun');
+            newEnemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
+            newEnemy.fireRate = Phaser.Math.Between(3000, 6000);
+            newEnemy.lastFired = 0;
+            newEnemy.health = 1;
+            this.physics.add.collider(player, newEnemy);
+            enemies.push(newEnemy);
+            currentEnemies++;
+            activeEnemies++;
+    }
     //Make reticle move with player
     reticle.body.velocity.x = player.body.velocity.x;
     reticle.body.velocity.y = player.body.velocity.y;
@@ -340,8 +389,8 @@ function update (time, delta)
     constrainReticle(reticle);
 
     // Make enemy fire
-    enemyFire(enemy, player, time, this);
-    enemyFire(enemy2, player, time, this);
+    //enemyFire(enemy, player, time, this);
+    //enemyFire(enemy2, player, time, this);
     
     //NEW MOVEMENT -------------------------------------
     if(this.cursors.up.isDown){
