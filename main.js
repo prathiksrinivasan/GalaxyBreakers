@@ -88,7 +88,10 @@ function preload ()
     // Load in images and sprites
     this.load.spritesheet('player_handgun', 'Assets/Sprites/wipGunner.png',
         { frameWidth: 66, frameHeight: 60 }
-    ); // Made by tokkatrain: https://tokkatrain.itch.io/top-down-basic-set
+    );
+    this.load.spritesheet('enemy', 'Assets/Sprites/wipEnemy.png',
+        { frameWidth: 66, frameHeight: 60 }
+    );
     this.load.image('bullet', 'Assets/Sprites/bullet.png');
     this.load.image('target', 'Assets/Sprites/reticle.png');
     this.load.image('background', 'Assets/Sprites/spaceBG.jpg');
@@ -105,6 +108,7 @@ function preload ()
 var maxEnemies;
 var currentEnemies;
 var activeEnemies;
+var score;
 var enemies = [];
 var start = false;
 
@@ -134,9 +138,10 @@ function create ()
     maxEnemies = 5;
     currentEnemies = 0;
     activeEnemies = 0;
+    score = 0;
     //create list of a certain amount of enemies, assign health/position/etc values
     for(var i = 0; i<maxEnemies; i++){
-        newEnemy = this.physics.add.sprite(Phaser.Math.Between(100, 2900),Phaser.Math.Between(100, 1900),'player_handgun');
+        newEnemy = this.physics.add.sprite(Phaser.Math.Between(100, 2900),Phaser.Math.Between(100, 1900),'enemy');
         newEnemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
         newEnemy.fireRate = Phaser.Math.Between(3000, 6000);
         newEnemy.lastFired = 0;
@@ -159,7 +164,7 @@ function create ()
     //this.physics.add.collider(player, enemy2);
 
     // Set sprite variables
-    player.health = 3;
+    player.health = 9;
     //enemy.health = 3;
     //enemy.lastFired = 0;
     //enemy2.health = 3;
@@ -227,7 +232,7 @@ function create ()
     //var tutorial = this.add.image(800, 600, 'tutorial');
     
     //game ui
-    
+    scorecounter = this.add.text(-100,-275, 'Score: '+score.toString(), {font: '32px Arial',fill: '#FFFFFF'}).setScrollFactor(0, 0);
     
 }
 
@@ -245,6 +250,7 @@ function enemyHitCallback(enemyHit, bulletHit)
         {
             //currentEnemies--;
             activeEnemies--;
+            score++;
             console.log(activeEnemies);
             enemyHit.setActive(false).setVisible(false);
             deathSFX.play();
@@ -267,15 +273,15 @@ function playerHitCallback(playerHit, bulletHit)
         hitSFX.play();
 
         // Kill hp sprites and kill player if health <= 0
-        if (playerHit.health == 2)
+        if (playerHit.health == 6)
         {
             hp3.destroy();
         }
-        else if (playerHit.health == 1)
+        else if (playerHit.health == 3)
         {
             hp2.destroy();
         }
-        else
+        else if (playerHit.health == 0)
         {
             hp1.destroy();
             // Game over state should execute here
@@ -368,7 +374,7 @@ function update (time, delta)
     //spawns new enemies as enemies are killed
     if(activeEnemies < maxEnemies){
             //console.log(currentEnemies);
-            newEnemy = this.physics.add.sprite(Phaser.Math.Between(100, 2900),Phaser.Math.Between(100, 1900),'player_handgun');
+            newEnemy = this.physics.add.sprite(Phaser.Math.Between(100, 2900),Phaser.Math.Between(100, 1900),'enemy');
             newEnemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
             newEnemy.fireRate = Phaser.Math.Between(3000, 6000);
             newEnemy.lastFired = 0;
@@ -416,4 +422,12 @@ function update (time, delta)
         loss = this.add.image(400, 300, 'loss').setScrollFactor(0, 0);
         game.scene.pause("default");
     }
+    scorecounter.text = 'Score: '+score.toString();
+}
+
+function render () {
+
+    // game.debug.text('Active Bullets: ' + bullets.countLiving() + ' / ' + bullets.length, 32, 32);
+    game.debug.text('Score: ' + score, 700, 32);
+
 }
