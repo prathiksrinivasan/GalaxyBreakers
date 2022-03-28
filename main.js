@@ -98,7 +98,8 @@ function preload ()
     this.load.image('heart', 'Assets/Sprites/heart.png');
     this.load.image('loss', 'Assets/Sprites/loss.png');
     
-    this.load.audio('shoot', 'Assets/Sound/Shoot.wav')
+    this.load.audio('playerShoot', 'Assets/Sound/playerShoot.wav')
+    this.load.audio('enemyShoot', 'Assets/Sound/enemyShoot.wav')
     this.load.audio('hit', 'Assets/Sound/Hit.wav')
     this.load.audio('death', 'Assets/Sound/Death.wav')
     
@@ -164,7 +165,7 @@ function create ()
     //this.physics.add.collider(player, enemy2);
 
     // Set sprite variables
-    player.health = 9;
+    player.health = 3;
     //enemy.health = 3;
     //enemy.lastFired = 0;
     //enemy2.health = 3;
@@ -176,7 +177,8 @@ function create ()
     //this.camera.deadzone = new Phaser.Rectangle(300, 300, 400, 300);
     
     // Set SFX
-    shootSFX = this.sound.add("shoot", {loop: false});
+    playerShootSFX = this.sound.add("playerShoot", {loop: false});
+    enemyShootSFX = this.sound.add("enemyShoot", {loop: false});
     hitSFX = this.sound.add("hit", {loop: false});
     deathSFX = this.sound.add("death", {loop: false});
     
@@ -210,7 +212,7 @@ function create ()
     // Pointer lock will only work after mousedown
     game.canvas.addEventListener('mousedown', function () {
         game.input.mouse.requestPointerLock();
-        shootSFX.play();
+        playerShootSFX.play();
     });
 
     // Exit pointer lock when Q or escape (by default) is pressed.
@@ -273,11 +275,11 @@ function playerHitCallback(playerHit, bulletHit)
         hitSFX.play();
 
         // Kill hp sprites and kill player if health <= 0
-        if (playerHit.health == 6)
+        if (playerHit.health == 2)
         {
             hp3.destroy();
         }
-        else if (playerHit.health == 3)
+        else if (playerHit.health == 1)
         {
             hp2.destroy();
         }
@@ -311,9 +313,13 @@ function enemyFire(enemy, player, time, gameObject)
             bullet.fire(enemy, player);
             // Add collider between bullet and player
             gameObject.physics.add.collider(player, bullet, playerHitCallback);
-            shootSFX.play()
+            enemyShootSFX.play()
         }
     }
+}
+
+function enemyFollow(enemy, player, speed, game){
+    game.physics.moveToObject(enemy, player, speed);
 }
 
 // Ensures sprite speed doesnt exceed maxVelocity while update is called
@@ -363,10 +369,11 @@ function update (time, delta)
 
     // Rotates enemy to face towards player
     for(var i = 0; i<currentEnemies; i++){    
-        //console.log(currentEnemies);
+        console.log(currentEnemies);
         //if(enemies[i].active == true){
             enemies[i].rotation = Phaser.Math.Angle.Between(enemies[i].x, enemies[i].y, player.x, player.y);
-            enemyFire(enemies[i],player,time,this);
+            enemyFire(enemies[i],player, time, this);
+            enemyFollow(enemies[i], player, 100, this);
         //}
     }
     //enemy2.rotation = Phaser.Math.Angle.Between(enemy2.x, enemy2.y, player.x, player.y);
