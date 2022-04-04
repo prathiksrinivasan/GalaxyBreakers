@@ -101,17 +101,23 @@ function preload ()
     this.load.audio('playerShoot', 'Assets/Sound/playerShoot.wav')
     this.load.audio('enemyShoot', 'Assets/Sound/enemyShoot.wav')
     this.load.audio('hit', 'Assets/Sound/Hit.wav')
-    this.load.audio('death', 'Assets/Sound/Death.wav')
+    this.load.audio('death', 'Assets/Sound/explosion.wav')
     
     this.load.image('tutorial', 'Assets/Sprites/tutorialBlock.png')
+    
+    this.load.image('particle1', 'Assets/Sprites/particle1.png')
+    this.load.image('particle2', 'Assets/Sprites/particle2.png')
 }
 
 var maxEnemies;
 var currentEnemies;
 var activeEnemies;
 var score;
+var wave;
 var enemies = [];
 var start = false;
+var isPaused = false;
+var killCount;
 
 function create ()
 {
@@ -133,13 +139,15 @@ function create ()
     hp3 = this.add.image(-250, -250, 'heart').setScrollFactor(0, 0);
 
     // Set image/sprite properties
-    background.setOrigin(0.5, 0.5).setDisplaySize(3000, 2000);
+    background.setOrigin(0.5, 0.5).setDisplaySize(6000, 4000);
     player.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true).setDrag(500, 500);
     //var enemies = [];
-    maxEnemies = 5;
+    maxEnemies = 1;
     currentEnemies = 0;
     activeEnemies = 0;
+    killCount = 0;
     score = 0;
+    wave = 1;
     //create list of a certain amount of enemies, assign health/position/etc values
     for(var i = 0; i<maxEnemies; i++){
         newEnemy = this.physics.add.sprite(Phaser.Math.Between(100, 2900),Phaser.Math.Between(100, 1900),'enemy');
@@ -147,7 +155,7 @@ function create ()
         newEnemy.fireRate = Phaser.Math.Between(3000, 6000);
         newEnemy.lastFired = 0;
         newEnemy.health = 1;
-        this.physics.add.collider(player, newEnemy);
+        newEnemy.enemyCollider = this.physics.add.collider(player, newEnemy);
         enemies.push(newEnemy);
         currentEnemies++;
         activeEnemies++;
@@ -190,7 +198,6 @@ function create ()
          down:Phaser.Input.Keyboard.KeyCodes.S,
          left:Phaser.Input.Keyboard.KeyCodes.A,
          right:Phaser.Input.Keyboard.KeyCodes.D});
-    
 
     // Fires bullet from player on left click of mouse
     this.input.on('pointerdown', function (pointer, time, lastFired) {
@@ -235,6 +242,32 @@ function create ()
     
     //game ui
     scorecounter = this.add.text(-100,-275, 'Score: '+score.toString(), {font: '32px Arial',fill: '#FFFFFF'}).setScrollFactor(0, 0);
+    wavecounter = this.add.text(1000,-275, 'Wave: '+wave.toString(), {font: '32px Arial',fill: '#FFFFFF'}).setScrollFactor(0, 0);
+    
+    //EXPLOSION FUNCTIONALITY
+    var emitter0 = this.add.particles('particle1').createEmitter({
+        x: 400,
+        y: 300,
+        speed: { min: -800, max: 800 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 0.5, end: 0 },
+        blendMode: 'SCREEN',
+        active: false,
+        lifespan: 600,
+        gravityY: 800
+    });
+
+    var emitter1 = this.add.particles('particle2').createEmitter({
+        x: 400,
+        y: 300,
+        speed: { min: -800, max: 800 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 0.3, end: 0 },
+        blendMode: 'SCREEN',
+        active: false,
+        lifespan: 300,
+        gravityY: 800
+    });
     
 }
 
@@ -252,10 +285,12 @@ function enemyHitCallback(enemyHit, bulletHit)
         {
             //currentEnemies--;
             activeEnemies--;
-            score++;
+            score+= 300; //right now, all enemies give 300 points, but ideally this would change depending on the type of enemy killed.
             console.log(activeEnemies);
             enemyHit.setActive(false).setVisible(false);
+            enemyHit.enemyCollider.destroy();
             deathSFX.play();
+            killCount ++;
             //enemies.splice(enemies.indexOf(enemyHit));
             
         }
@@ -378,6 +413,28 @@ function update (time, delta)
     }
     //enemy2.rotation = Phaser.Math.Angle.Between(enemy2.x, enemy2.y, player.x, player.y);
     
+    // PROGRESSION SYSTEM
+    if(killCount == 3){
+        console.log("Wave 2 is starting!")
+        wave = 2;
+        maxEnemies = 2;
+    }
+    else if (killCount == 10){
+        console.log("Wave 3 is starting!")
+        wave = 3;
+        maxEnemies = 3;
+    }
+    else if (killCount == 20){
+        console.log("Wave 4 is starting!")
+        wave = 4;
+        maxEnemies = 4;
+    }
+    else if (killCount == 35){
+        console.log("Wave 5 is starting!")
+        wave = 5;
+        maxEnemies = 5;
+    }
+    
     //spawns new enemies as enemies are killed
     if(activeEnemies < maxEnemies){
             //console.log(currentEnemies);
@@ -386,7 +443,7 @@ function update (time, delta)
             newEnemy.fireRate = Phaser.Math.Between(3000, 6000);
             newEnemy.lastFired = 0;
             newEnemy.health = 1;
-            this.physics.add.collider(player, newEnemy);
+            newEnemy.enemyCollider = this.physics.add.collider(player, newEnemy);
             enemies.push(newEnemy);
             currentEnemies++;
             activeEnemies++;
@@ -430,6 +487,7 @@ function update (time, delta)
         game.scene.pause("default");
     }
     scorecounter.text = 'Score: '+score.toString();
+    wavecounter.text = 'Wave: '+wave.toString();
 }
 
 function render () {
