@@ -7,7 +7,7 @@ var config = {
       default: 'arcade',
       arcade: {
         gravity: { y: 0 },
-        debug: false
+        debug: true
       }
     },
     scene: {
@@ -211,7 +211,7 @@ function create ()
         {
             bullet.fire(player, reticle);
             for(var i = 0; i<currentEnemies; i++){    
-                this.physics.add.collider(enemies[i], bullet, enemyHitCallback);
+                this.physics.add.overlap(enemies[i], bullet, enemyHitCallback);
             }
         }
     }, this);
@@ -347,7 +347,7 @@ function enemyFire(enemy, player, time, gameObject)
         {
             bullet.fire(enemy, player);
             // Add collider between bullet and player
-            gameObject.physics.add.collider(player, bullet, playerHitCallback);
+            gameObject.physics.add.overlap(player, bullet, playerHitCallback);
             enemyShootSFX.play()
         }
     }
