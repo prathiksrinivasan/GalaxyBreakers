@@ -37,7 +37,7 @@ var Bullet = new Phaser.Class({
     // Bullet Constructor
     function Bullet (scene)
     { 
-            Phaser.GameObjects.Image.call(this, scene, 0, 0, 'bullet');
+        Phaser.GameObjects.Image.call(this, scene, 0, 0, 'bullet');
         
         this.speed = 1;
         this.neg = false;
@@ -172,8 +172,10 @@ function create ()
     this.physics.world.setBounds(0, 0, 3000, 2000);
 
     // Add 2 groups for Bullet objects
-    playerBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true });
-    enemyBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true });
+    playerBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true, defaultKey: 'bullet' });
+    enemyBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true, defaultKey: 'bullet' });
+    
+    this.physics.add.overlap(playerBullets, enemyBullets, bulletCollideCallback);
 
     // Add background player, enemy, reticle, healthpoint sprites
     var background = this.add.image(1500, 1000, 'background');
@@ -209,13 +211,21 @@ function create ()
     wave = 1;
     //create list of a certain amount of enemies, assign health/position/etc values
     for(var i = 0; i<maxEnemies; i++){
-        newEnemy = this.physics.add.sprite(Phaser.Math.Between(100, 2900),Phaser.Math.Between(100, 1900),'enemy');
+        spawnPosX = Phaser.Math.Between(100, 2900);
+        spawnPosY = Phaser.Math.Between(100, 2900);
+        while(Math.abs(player.X - spawnPosX) < 1000){
+              spawnPosX = Phaser.Math.Between(100, 2900);
+        }
+        while(Math.abs(player.Y - spawnPosY) < 1000){
+              spawnPosY = Phaser.Math.Between(100, 1900);
+        }
+        newEnemy = this.physics.add.sprite(spawnPosX,spawnPosY,'enemy');
         newEnemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
-        newEnemy.fireRate = Phaser.Math.Between(3000, 6000);
+        newEnemy.fireRate = 6000;
         newEnemy.lastFired = 0;
         newEnemy.health = 1;
         //newEnemy.enemyCollider = this.physics.add.collider(player, newEnemy);
-        this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
+        newEnemy.enemyCollider = this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
         enemies.push(newEnemy);
         currentEnemies++;
         activeEnemies++;
@@ -354,7 +364,9 @@ function enemyHitCallback(enemyHit, bulletHit)
             //currentEnemies--;
             activeEnemies--;
             //enemies.splice(enemies.indexOf(enemyHit));
-            enemyHit.setActive(false).setVisible(false);      
+            enemyHit.setVisible(false);
+            enemyHit.setActive(false); 
+            enemyHit.enemyCollider.destroy();    
             //enemyHit.destroy();
             exp+=50;
             console.log(exp);
@@ -362,7 +374,8 @@ function enemyHitCallback(enemyHit, bulletHit)
         }
 
         // Destroy bullet
-        bulletHit.setActive(false).setVisible(false);
+        bulletHit.setActive(false);
+        bulletHit.setVisible(false);
         //bulletHit.sprite.kill();
     }
 }
@@ -392,8 +405,16 @@ function playerHitCallback(playerHit, bulletHit)
         }
 
         // Destroy bullet
-        bulletHit.setActive(false).setVisible(false);
+        bulletHit.setActive(false);
+        bulletHit.setVisible(false);
     }
+}
+
+function bulletCollideCallback(bullet1, bullet2){
+    bullet1.setActive(false);
+    bullet1.setVisible(false);
+    bullet2.setActive(false);
+    bullet2.setVisible(false);
 }
 
 function enemyFire(enemy, player, time, gameObject)
@@ -505,13 +526,21 @@ function update (time, delta)
     //spawns new enemies as enemies are killed
     if(activeEnemies < maxEnemies){
             //console.log(currentEnemies);
-            newEnemy = this.physics.add.sprite(Phaser.Math.Between(100, 2900),Phaser.Math.Between(100, 1900),'enemy');
+            spawnPosX = Phaser.Math.Between(100, 2900);
+            spawnPosY = Phaser.Math.Between(100, 2900);
+            while(Math.abs(player.X - spawnPosX) < 800){
+                  spawnPosX = Phaser.Math.Between(100, 2900);
+            }
+            while(Math.abs(player.Y - spawnPosY) < 600){
+                  spawnPosY = Phaser.Math.Between(100, 1900);
+            }
+            newEnemy = this.physics.add.sprite(spawnPosX,spawnPosY,'enemy');
             newEnemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
-            newEnemy.fireRate = Phaser.Math.Between(3000, 6000);
+            newEnemy.fireRate = 6000;
             newEnemy.lastFired = 0;
             newEnemy.health = 1;
             //newEnemy.enemyCollider = this.physics.add.collider(player, newEnemy);
-            this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
+            newEnemy.enemyCollider = this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
             enemies.push(newEnemy);
             currentEnemies++;
             activeEnemies++;
