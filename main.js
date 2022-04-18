@@ -36,9 +36,11 @@ var Bullet = new Phaser.Class({
 
     // Bullet Constructor
     function Bullet (scene)
-    {
-        Phaser.GameObjects.Image.call(this, scene, 0, 0, 'bullet');
+    { 
+            Phaser.GameObjects.Image.call(this, scene, 0, 0, 'bullet');
+        
         this.speed = 1;
+        this.neg = false;
         this.born = 0;
         this.direction = 0;
         this.xSpeed = 0;
@@ -47,25 +49,26 @@ var Bullet = new Phaser.Class({
     },
 
     // Fires a bullet from the player to the reticle
-    fire: function (shooter, target)
+    fire: function (shooter, target, offset, speed)
     {
+        radOffset = offset*Math.PI/180;
         this.setPosition(shooter.x, shooter.y); // Initial position
-        this.direction = Math.atan( (target.x-this.x) / (target.y-this.y));
-
-        // Calculate X and y velocity of bullet to moves it from shooter to target
-        if (target.y >= this.y)
+        this.direction = Math.atan( (target.x-this.x) / (target.y-this.y))+radOffset;
+        
+        if(target.y >= this.y)
         {
-            this.xSpeed = this.speed*Math.sin(this.direction);
-            this.ySpeed = this.speed*Math.cos(this.direction);
+            this.xSpeed = speed*Math.sin(this.direction);
+            this.ySpeed = speed*Math.cos(this.direction);
         }
         else
         {
-            this.xSpeed = -this.speed*Math.sin(this.direction);
-            this.ySpeed = -this.speed*Math.cos(this.direction);
+            this.xSpeed = -speed*Math.sin(this.direction);
+            this.ySpeed = -speed*Math.cos(this.direction);
         }
 
-        this.rotation = shooter.rotation; // angle bullet with shooters rotation
+        this.rotation = shooter.rotation-radOffset; // angle bullet with shooters rotation
         this.born = 0; // Time since new bullet spawned
+        this.speed = speed;
     },
 
     // Updates the position of the bullet each cycle
@@ -81,6 +84,48 @@ var Bullet = new Phaser.Class({
         }
     }
 
+});
+
+var Weapon = new Phaser.Class({
+    initialize:
+    function Weapon (scene, bulletsGroup){
+        this.fireRate = 30;
+        this.numBullets = 1;
+        this.nextFire = 0;
+        this.bulletSpeed = 1;
+        this.bullets = bulletsGroup;
+    },
+    
+    fire: function (shooter, target){
+        if(this.nextFire < this.fireRate) {
+            this.nextFire++;
+        }
+        else{
+            var startAngleOffset = 15*(this.numBullets-1)/2;
+            for(var i = 0; i<this.numBullets; i++){
+                var angle = 0 - startAngleOffset + (15*i);
+                var bullet = playerBullets.get().setActive(true).setVisible(true);
+                if(bullet){
+                    bullet.fire(shooter, target , angle, this.bulletSpeed);
+                }
+            }
+            this.nextFire = 0;
+        }
+    },
+    
+    increaseBullets: function(amount){
+        this.numBullets += amount;
+    },
+    
+    increaseRate: function(amount){
+        this.fireRate /= amount;
+    },
+    
+    increaseSpeed: function(amount){
+        this.bulletSpeed += amount;
+    },
+    
+    
 });
 
 function preload ()
@@ -118,6 +163,8 @@ var enemies = [];
 var start = false;
 var isPaused = false;
 var killCount;
+var weapons = [];
+
 
 function create ()
 {
@@ -130,13 +177,25 @@ function create ()
 
     // Add background player, enemy, reticle, healthpoint sprites
     var background = this.add.image(1500, 1000, 'background');
-    player = this.physics.add.sprite(800, 600, 'player_handgun');
+    player = this.physics.add.sprite(1500, 1000, 'player_handgun');
     //enemy = this.physics.add.sprite(300, 600, 'player_handgun');
     //enemy2 = this.physics.add.sprite(1400, 800, 'player_handgun');
     reticle = this.physics.add.sprite(800, 700, 'target');
     hp1 = this.add.image(-350, -250, 'heart').setScrollFactor(0, 0);
     hp2 = this.add.image(-300, -250, 'heart').setScrollFactor(0, 0);
     hp3 = this.add.image(-250, -250, 'heart').setScrollFactor(0, 0);
+    
+    
+    expBG = this.add.rectangle(300,-250,400, 20, 0x000000).setStrokeStyle(4,0xffffff);
+    exp = 1;
+    maxExp = 100;
+    expBar = this.add.rectangle(300,-250,400, 20, 0x00ffff);
+    expBar.setScrollFactor(0,0);
+    expBG.setScrollFactor(0,0);
+    
+    this.weapons = [];
+    this.weapons.push(new Weapon(this.game, playerBullets));
+    
 
     // Set image/sprite properties
     background.setOrigin(0.5, 0.5).setDisplaySize(6000, 4000);
@@ -155,7 +214,8 @@ function create ()
         newEnemy.fireRate = Phaser.Math.Between(3000, 6000);
         newEnemy.lastFired = 0;
         newEnemy.health = 1;
-        newEnemy.enemyCollider = this.physics.add.collider(player, newEnemy);
+        //newEnemy.enemyCollider = this.physics.add.collider(player, newEnemy);
+        this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
         enemies.push(newEnemy);
         currentEnemies++;
         activeEnemies++;
@@ -167,6 +227,8 @@ function create ()
     hp1.setOrigin(0.5, 0.5).setDisplaySize(50, 50);
     hp2.setOrigin(0.5, 0.5).setDisplaySize(50, 50);
     hp3.setOrigin(0.5, 0.5).setDisplaySize(50, 50);
+    
+    
     
     //set colliders
     //this.physics.add.collider(player, enemy);
@@ -182,7 +244,8 @@ function create ()
     // Set camera properties
     this.cameras.main.zoom = 0.5;
     this.cameras.main.startFollow(player);
-    //this.camera.deadzone = new Phaser.Rectangle(300, 300, 400, 300);
+    this.cameras.main.setBounds(0,0,3000,2000);
+    //this.cameras.main.setDeadzone(25, 25);
     
     // Set SFX
     playerShootSFX = this.sound.add("playerShoot", {loop: false});
@@ -200,7 +263,7 @@ function create ()
          right:Phaser.Input.Keyboard.KeyCodes.D});
 
     // Fires bullet from player on left click of mouse
-    this.input.on('pointerdown', function (pointer, time, lastFired) {
+    /*this.input.on('pointerdown', function (pointer, time, lastFired) {
         if (player.active === false)
             return;
 
@@ -214,7 +277,7 @@ function create ()
                 this.physics.add.overlap(enemies[i], bullet, enemyHitCallback);
             }
         }
-    }, this);
+    }, this);*/
 
     // Pointer lock will only work after mousedown
     game.canvas.addEventListener('mousedown', function () {
@@ -283,20 +346,24 @@ function enemyHitCallback(enemyHit, bulletHit)
         // Kill enemy if health <= 0
         if (enemyHit.health <= 0)
         {
-            //currentEnemies--;
-            activeEnemies--;
+            
             score+= 300; //right now, all enemies give 300 points, but ideally this would change depending on the type of enemy killed.
             console.log(activeEnemies);
-            enemyHit.setActive(false).setVisible(false);
-            enemyHit.enemyCollider.destroy();
             deathSFX.play();
             killCount ++;
+            //currentEnemies--;
+            activeEnemies--;
             //enemies.splice(enemies.indexOf(enemyHit));
+            enemyHit.setActive(false).setVisible(false);      
+            //enemyHit.destroy();
+            exp+=50;
+            console.log(exp);
             
         }
 
         // Destroy bullet
         bulletHit.setActive(false).setVisible(false);
+        //bulletHit.sprite.kill();
     }
 }
 
@@ -345,7 +412,7 @@ function enemyFire(enemy, player, time, gameObject)
 
         if (bullet)
         {
-            bullet.fire(enemy, player);
+            bullet.fire(enemy, player, 0, 1);
             // Add collider between bullet and player
             gameObject.physics.add.overlap(player, bullet, playerHitCallback);
             enemyShootSFX.play()
@@ -443,11 +510,30 @@ function update (time, delta)
             newEnemy.fireRate = Phaser.Math.Between(3000, 6000);
             newEnemy.lastFired = 0;
             newEnemy.health = 1;
-            newEnemy.enemyCollider = this.physics.add.collider(player, newEnemy);
+            //newEnemy.enemyCollider = this.physics.add.collider(player, newEnemy);
+            this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
             enemies.push(newEnemy);
             currentEnemies++;
             activeEnemies++;
     }
+    
+    expBar.width = (exp/maxExp) * 400;
+    
+    if(exp >= maxExp){
+        exp = 0;
+        maxExp += 50;
+        rand = Phaser.Math.Between(0,2);
+        if(rand == 0){
+            this.weapons[0].increaseBullets(1);
+        }
+        if(rand == 1){
+            this.weapons[0].increaseRate(2);
+        }
+        if(rand == 2){
+            this.weapons[0].increaseSpeed(.5);
+        }
+    }
+    
     //Make reticle move with player
     reticle.body.velocity.x = player.body.velocity.x;
     reticle.body.velocity.y = player.body.velocity.y;
@@ -480,6 +566,10 @@ function update (time, delta)
     }
     if(this.cursors.right.isUp && this.cursors.left.isUp){
         player.setAccelerationX(0)
+    }
+    
+    for(var i = 0; i<this.weapons.length; i++){
+        this.weapons[i].fire(player, reticle);
     }
     
     if(player.health <= 0){
