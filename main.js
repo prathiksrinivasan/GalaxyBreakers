@@ -79,9 +79,14 @@ var Bullet = new Phaser.Class({
         this.born += delta;
         if (this.born > 1800)
         {
-            this.setActive(false);
-            this.setVisible(false);
+            this.bulletKill();
         }
+    },
+    
+    bulletKill: function(){
+        this.setActive(false);
+        this.setVisible(false);
+        this.destroy();
     }
 
 });
@@ -168,6 +173,12 @@ var weapons = [];
 
 function create ()
 {
+    
+    enemies = [];
+    start = false;
+    isPaused = false;
+    killCount;
+    weapons = [];
     // Set world bounds
     this.physics.world.setBounds(0, 0, 3000, 2000);
 
@@ -300,6 +311,7 @@ function create ()
         if (game.input.mouse.locked)
             game.input.mouse.releasePointerLock();
     }, 0, this);
+    
 
     // Move reticle upon locked pointer move
     this.input.on('pointermove', function (pointer) {
@@ -361,22 +373,23 @@ function enemyHitCallback(enemyHit, bulletHit)
             console.log(activeEnemies);
             deathSFX.play();
             killCount ++;
-            //currentEnemies--;
+            currentEnemies--;
             activeEnemies--;
-            //enemies.splice(enemies.indexOf(enemyHit));
+            enemies.splice(enemies.indexOf(enemyHit),1);
+            console.log(enemies.length);
             enemyHit.setVisible(false);
             enemyHit.setActive(false); 
-            enemyHit.enemyCollider.destroy();    
+            enemyHit.enemyCollider.destroy();  
+            enemyHit.destroy();
             //enemyHit.destroy();
             exp+=50;
-            console.log(exp);
             
         }
 
         // Destroy bullet
-        bulletHit.setActive(false);
-        bulletHit.setVisible(false);
-        //bulletHit.sprite.kill();
+        //bulletHit.setActive(false);
+        //bulletHit.setVisible(false);
+        bulletHit.bulletKill();
     }
 }
 
@@ -405,16 +418,19 @@ function playerHitCallback(playerHit, bulletHit)
         }
 
         // Destroy bullet
-        bulletHit.setActive(false);
-        bulletHit.setVisible(false);
+        //bulletHit.setActive(false);
+        //bulletHit.setVisible(false);
+        bulletHit.bulletKill();
     }
 }
 
 function bulletCollideCallback(bullet1, bullet2){
-    bullet1.setActive(false);
-    bullet1.setVisible(false);
-    bullet2.setActive(false);
-    bullet2.setVisible(false);
+    //bullet1.setActive(false);
+    //bullet1.setVisible(false);
+    //bullet2.setActive(false);
+    //bullet2.setVisible(false);
+    bullet1.bulletKill();
+    bullet2.bulletKill();
 }
 
 function enemyFire(enemy, player, time, gameObject)
@@ -491,7 +507,7 @@ function update (time, delta)
     player.rotation = Phaser.Math.Angle.Between(player.x, player.y, reticle.x, reticle.y);
 
     // Rotates enemy to face towards player
-    for(var i = 0; i<currentEnemies; i++){    
+    for(var i = 0; i<enemies.length; i++){    
         console.log(currentEnemies);
         //if(enemies[i].active == true){
             enemies[i].rotation = Phaser.Math.Angle.Between(enemies[i].x, enemies[i].y, player.x, player.y);
@@ -602,8 +618,9 @@ function update (time, delta)
     }
     
     if(player.health <= 0){
-        loss = this.add.image(400, 300, 'loss').setScrollFactor(0, 0);
-        game.scene.pause("default");
+        //loss = this.add.image(400, 300, 'loss').setScrollFactor(0, 0);
+        //game.scene.pause("default");
+        this.scene.restart();
     }
     scorecounter.text = 'Score: '+score.toString();
     wavecounter.text = 'Wave: '+wave.toString();
