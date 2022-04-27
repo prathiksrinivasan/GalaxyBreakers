@@ -178,7 +178,10 @@ var isPaused = false;
 var killCount;
 var weapons = [];
 var player;
-
+var waveStart;
+var setTime = [true, true, true, true];
+var waveImage;
+var initWave = true;
 
 function create ()
 {
@@ -227,6 +230,7 @@ function create ()
     killCount = 0;
     score = 0;
     wave = 1;
+    waveStart = false;
     //create list of a certain amount of enemies, assign health/position/etc values
     for(var i = 0; i<maxEnemies; i++){
         spawnPosX = Phaser.Math.Between(100, 2900);
@@ -324,6 +328,9 @@ function create ()
         lifespan: 300,
         gravityY: 800
     });
+    
+    waveImage = this.add.image(400, 300, 'wave').setScrollFactor(0, 0);
+    waveImage.visible = false;
     
 }
 
@@ -462,15 +469,27 @@ function constrainReticle(reticle)
         reticle.y = player.y-600;
 }
 
+function midWaveAnnouncement(time, image, timeActivator){
+    // pop up wave start screen
+        waveImage.visible = true;
+        if(setTime[timeActivator]){
+            currentTime = time;
+            setTime[timeActivator] = false;
+        }
+        if((time - currentTime) > 3000){
+            waveImage.visible = false;
+            waveStart = false;
+        }
+}
+
 function update (time, delta)
 {
-    
     // Rotates player to face towards reticle
     player.rotation = Phaser.Math.Angle.Between(player.x, player.y, reticle.x, reticle.y);
 
     // Rotates enemy to face towards player
     for(var i = 0; i<enemies.length; i++){    
-        console.log(currentEnemies);
+        //console.log(currentEnemies);
         //if(enemies[i].active == true){
             enemies[i].rotation = Phaser.Math.Angle.Between(enemies[i].x, enemies[i].y, player.x, player.y);
             enemyFire(enemies[i],player, time, this);
@@ -479,26 +498,46 @@ function update (time, delta)
     }
     
     // PROGRESSION SYSTEM
-    if(killCount == 3){
-        //wave = this.add.image(400, 300, 'wave').setScrollFactor(0, 0);
+    if(killCount == 3 && !waveStart){
         wave = 2;
         maxEnemies = 2;
+        waveStart = true;
     }
-    else if (killCount == 10){
+    else if (killCount == 10 && !waveStart){
         wave = 3;
         maxEnemies = 3;
+        waveStart = true;
     }
-    else if (killCount == 20){
+    else if (killCount == 20 && !waveStart){
         wave = 4;
         maxEnemies = 4;
+        waveStart = true;
     }
-    else if (killCount == 35){
+    else if (killCount == 35 && !waveStart){
         wave = 5;
         maxEnemies = 5;
+        waveStart = true;
+    }
+    
+    if(waveStart){
+        switch(wave){
+            case 2:
+                midWaveAnnouncement(time, waveImage, 0)
+                break
+            case 3:
+                midWaveAnnouncement(time, waveImage, 1)
+                break
+            case 4:
+                midWaveAnnouncement(time, waveImage, 2)
+                break
+            case 5:
+                midWaveAnnouncement(time, waveImage, 3)
+                break
+        }
     }
     
     //spawns new enemies as enemies are killed
-    if(activeEnemies < maxEnemies){
+    if(activeEnemies < maxEnemies && !waveStart){
             //console.log(currentEnemies);
             spawnPosX = Phaser.Math.Between(100, 2900);
             spawnPosY = Phaser.Math.Between(100, 2900);
