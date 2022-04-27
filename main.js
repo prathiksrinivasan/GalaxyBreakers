@@ -142,6 +142,12 @@ function preload ()
     this.load.spritesheet('enemy', 'Assets/Sprites/wipEnemy.png',
         { frameWidth: 66, frameHeight: 60 }
     );
+    this.load.spritesheet('enemy2', 'Assets/Sprites/wipEnemy2.png',
+        { frameWidth: 66, frameHeight: 60 }
+    );
+    this.load.spritesheet('enemy3', 'Assets/Sprites/wipEnemy3.png',
+        { frameWidth: 66, frameHeight: 60 }
+    );
     this.load.image('bullet', 'Assets/Sprites/bullet.png');
     this.load.image('target', 'Assets/Sprites/reticle.png');
     this.load.image('background', 'Assets/Sprites/spaceBG.jpg');
@@ -157,6 +163,8 @@ function preload ()
     
     this.load.image('particle1', 'Assets/Sprites/particle1.png')
     this.load.image('particle2', 'Assets/Sprites/particle2.png')
+    
+    this.load.image('wave', 'Assets/Sprites/wave.png')
 }
 
 var maxEnemies;
@@ -169,6 +177,7 @@ var start = false;
 var isPaused = false;
 var killCount;
 var weapons = [];
+var player;
 
 
 function create ()
@@ -191,8 +200,6 @@ function create ()
     // Add background player, enemy, reticle, healthpoint sprites
     var background = this.add.image(1500, 1000, 'background');
     player = this.physics.add.sprite(1500, 1000, 'player_handgun');
-    //enemy = this.physics.add.sprite(300, 600, 'player_handgun');
-    //enemy2 = this.physics.add.sprite(1400, 800, 'player_handgun');
     reticle = this.physics.add.sprite(800, 700, 'target');
     hp1 = this.add.image(-350, -250, 'heart').setScrollFactor(0, 0);
     hp2 = this.add.image(-300, -250, 'heart').setScrollFactor(0, 0);
@@ -235,41 +242,26 @@ function create ()
         newEnemy.fireRate = 6000;
         newEnemy.lastFired = 0;
         newEnemy.health = 1;
-        //newEnemy.enemyCollider = this.physics.add.collider(player, newEnemy);
         newEnemy.enemyCollider = this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
         enemies.push(newEnemy);
         currentEnemies++;
         activeEnemies++;
     }
-    //enemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
-    //enemy2.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
     reticle.setOrigin(0.5, 0.5).setDisplaySize(25, 25).setCollideWorldBounds(true);
     
     hp1.setOrigin(0.5, 0.5).setDisplaySize(50, 50);
     hp2.setOrigin(0.5, 0.5).setDisplaySize(50, 50);
     hp3.setOrigin(0.5, 0.5).setDisplaySize(50, 50);
-    
-    
-    
-    //set colliders
-    //this.physics.add.collider(player, enemy);
-    //this.physics.add.collider(player, enemy2);
 
     // Set sprite variables
     player.health = 3;
-    //enemy.health = 3;
-    //enemy.lastFired = 0;
-    //enemy2.health = 3;
-    //enemy2.lastFired = 0;
 
     // Set camera properties
     this.cameras.main.zoom = 0.5;
     this.cameras.main.startFollow(player);
     this.cameras.main.setBounds(0,0,3000,2000);
-    //this.cameras.main.setDeadzone(25, 25);
     
     // Set SFX
-    playerShootSFX = this.sound.add("playerShoot", {loop: false});
     enemyShootSFX = this.sound.add("enemyShoot", {loop: false});
     hitSFX = this.sound.add("hit", {loop: false});
     deathSFX = this.sound.add("death", {loop: false});
@@ -283,27 +275,9 @@ function create ()
          left:Phaser.Input.Keyboard.KeyCodes.A,
          right:Phaser.Input.Keyboard.KeyCodes.D});
 
-    // Fires bullet from player on left click of mouse
-    /*this.input.on('pointerdown', function (pointer, time, lastFired) {
-        if (player.active === false)
-            return;
-
-        // Get bullet from bullets group
-        var bullet = playerBullets.get().setActive(true).setVisible(true);
-
-        if (bullet)
-        {
-            bullet.fire(player, reticle);
-            for(var i = 0; i<currentEnemies; i++){    
-                this.physics.add.overlap(enemies[i], bullet, enemyHitCallback);
-            }
-        }
-    }, this);*/
-
     // Pointer lock will only work after mousedown
     game.canvas.addEventListener('mousedown', function () {
         game.input.mouse.requestPointerLock();
-        playerShootSFX.play();
     });
 
     // Exit pointer lock when Q or escape (by default) is pressed.
@@ -321,9 +295,6 @@ function create ()
             reticle.y += pointer.movementY;
         }
     }, this);
-    
-    // tutorial screen functionality WILL REQUIRE SCENE CHANGE. RECONFIG CODE TO SCENES BEFORE IMPLEMENTATION
-    //var tutorial = this.add.image(800, 600, 'tutorial');
     
     //game ui
     scorecounter = this.add.text(-100,-275, 'Score: '+score.toString(), {font: '32px Arial',fill: '#FFFFFF'}).setScrollFactor(0, 0);
@@ -381,14 +352,11 @@ function enemyHitCallback(enemyHit, bulletHit)
             enemyHit.setActive(false); 
             enemyHit.enemyCollider.destroy();  
             enemyHit.destroy();
-            //enemyHit.destroy();
             exp+=50;
             
         }
 
         // Destroy bullet
-        //bulletHit.setActive(false);
-        //bulletHit.setVisible(false);
         bulletHit.bulletKill();
     }
 }
@@ -418,17 +386,11 @@ function playerHitCallback(playerHit, bulletHit)
         }
 
         // Destroy bullet
-        //bulletHit.setActive(false);
-        //bulletHit.setVisible(false);
         bulletHit.bulletKill();
     }
 }
 
 function bulletCollideCallback(bullet1, bullet2){
-    //bullet1.setActive(false);
-    //bullet1.setVisible(false);
-    //bullet2.setActive(false);
-    //bullet2.setVisible(false);
     bullet1.bulletKill();
     bullet2.bulletKill();
 }
@@ -515,26 +477,22 @@ function update (time, delta)
             enemyFollow(enemies[i], player, 100, this);
         //}
     }
-    //enemy2.rotation = Phaser.Math.Angle.Between(enemy2.x, enemy2.y, player.x, player.y);
     
     // PROGRESSION SYSTEM
     if(killCount == 3){
-        console.log("Wave 2 is starting!")
+        //wave = this.add.image(400, 300, 'wave').setScrollFactor(0, 0);
         wave = 2;
         maxEnemies = 2;
     }
     else if (killCount == 10){
-        console.log("Wave 3 is starting!")
         wave = 3;
         maxEnemies = 3;
     }
     else if (killCount == 20){
-        console.log("Wave 4 is starting!")
         wave = 4;
         maxEnemies = 4;
     }
     else if (killCount == 35){
-        console.log("Wave 5 is starting!")
         wave = 5;
         maxEnemies = 5;
     }
@@ -544,22 +502,60 @@ function update (time, delta)
             //console.log(currentEnemies);
             spawnPosX = Phaser.Math.Between(100, 2900);
             spawnPosY = Phaser.Math.Between(100, 2900);
-            while(Math.abs(player.X - spawnPosX) < 800){
-                  spawnPosX = Phaser.Math.Between(100, 2900);
+            if(Math.abs(player.x - spawnPosX) > 800 && Math.abs(player.y - spawnPosY) > 600){
+                console.log("ENEMY GEN PASSED AT X: " + (player.x - spawnPosX) + " Y: " + (player.y - spawnPosY))
+                //only then can we spawn the enemy
+                newEnemy = this.physics.add.sprite(spawnPosX,spawnPosY,'enemy');
+                newEnemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
+
+                // enemy stats will be randomized based on how far into the game you are 
+                switch(wave){
+                    case 2:
+                        newEnemy.fireRate = Math.floor(Math.random() * 1500) + 6000; //gen between 6000-7500
+                        newEnemy.lastFired = 0;
+                        newEnemy.health = Math.floor(Math.random() * 2) + 1; //gen between 1-2
+                        if(newEnemy.health == 2){
+                            newEnemy.setTexture('enemy2')
+                        }
+                        break
+                    case 3:
+                        newEnemy.fireRate = 7500; //all 7500
+                        newEnemy.lastFired = 0;
+                        newEnemy.health = 2; //all 2's
+                        newEnemy.setTexture('enemy2')
+                        break
+                    case 4:
+                        newEnemy.fireRate = Math.floor(Math.random() * 1500) + 7500; //gen between 7500-9000
+                        newEnemy.lastFired = 0;
+                        newEnemy.health = Math.floor(Math.random() * 3) + 1; //gen between 2-3
+                        if(newEnemy.health == 2){
+                            newEnemy.setTexture('enemy2')
+                        }
+                        else{
+                            newEnemy.setTexture('enemy3')
+                        }
+                        break
+                    case 5:
+                        newEnemy.fireRate = 9000; //all 9000
+                        newEnemy.lastFired = 0;
+                        newEnemy.health = 3; //all 3's
+                        newEnemy.setTexture('enemy3')
+                        break
+                    default:
+                        newEnemy.fireRate = 6000;
+                        newEnemy.lastFired = 0;
+                        newEnemy.health = 1;
+                }
+                newEnemy.fireRate = 6000;
+                newEnemy.lastFired = 0;
+                newEnemy.health = 1;
+
+                newEnemy.enemyCollider = this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
+                enemies.push(newEnemy);
+                currentEnemies++;
+                activeEnemies++;
             }
-            while(Math.abs(player.Y - spawnPosY) < 600){
-                  spawnPosY = Phaser.Math.Between(100, 1900);
-            }
-            newEnemy = this.physics.add.sprite(spawnPosX,spawnPosY,'enemy');
-            newEnemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
-            newEnemy.fireRate = 6000;
-            newEnemy.lastFired = 0;
-            newEnemy.health = 1;
-            //newEnemy.enemyCollider = this.physics.add.collider(player, newEnemy);
-            newEnemy.enemyCollider = this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
-            enemies.push(newEnemy);
-            currentEnemies++;
-            activeEnemies++;
+            
     }
     
     expBar.width = (exp/maxExp) * 400;
@@ -588,10 +584,6 @@ function update (time, delta)
 
     // Constrain position of constrainReticle
     constrainReticle(reticle);
-
-    // Make enemy fire
-    //enemyFire(enemy, player, time, this);
-    //enemyFire(enemy2, player, time, this);
     
     //NEW MOVEMENT -------------------------------------
     if(this.cursors.up.isDown){
