@@ -158,6 +158,7 @@ function preload ()
     this.load.audio('enemyShoot', 'Assets/Sound/enemyShoot.wav')
     this.load.audio('hit', 'Assets/Sound/Hit.wav')
     this.load.audio('death', 'Assets/Sound/explosion.wav')
+    this.load.audio('bgm', 'Assets/Sound/BGM.wav')
     
     this.load.image('tutorial', 'Assets/Sprites/tutorialBlock.png')
     
@@ -269,6 +270,8 @@ function create ()
     enemyShootSFX = this.sound.add("enemyShoot", {loop: false});
     hitSFX = this.sound.add("hit", {loop: false});
     deathSFX = this.sound.add("death", {loop: false});
+    bgm = this.sound.add("bgm", {loop: true});
+    bgm.play();
     
     //NEW MOVEMENT -------------------------------------
     player.setFrictionX(100);
@@ -476,7 +479,7 @@ function midWaveAnnouncement(time, image, timeActivator){
             currentTime = time;
             setTime[timeActivator] = false;
         }
-        if((time - currentTime) > 3000){
+        if((time - currentTime) > 5000){
             waveImage.visible = false;
             waveStart = false;
         }
