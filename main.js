@@ -183,6 +183,8 @@ var waveStart;
 var setTime = [true, true, true, true];
 var waveImage;
 var initWave = true;
+var emitter0;
+var emitter1;
 
 function create ()
 {
@@ -308,28 +310,28 @@ function create ()
     wavecounter = this.add.text(1000,-275, 'Wave: '+wave.toString(), {font: '32px Arial',fill: '#FFFFFF'}).setScrollFactor(0, 0);
     
     //EXPLOSION FUNCTIONALITY
-    var emitter0 = this.add.particles('particle1').createEmitter({
-        x: 400,
-        y: 300,
-        speed: { min: -800, max: 800 },
+    emitter0 = this.add.particles('particle1').createEmitter({
+        x: -1000,
+        y: -1000,
+        speed: { min: -500, max: 500 },
         angle: { min: 0, max: 360 },
-        scale: { start: 0.5, end: 0 },
+        scale: { start: 10, end: 0 },
         blendMode: 'SCREEN',
-        active: false,
+        //active: false,
         lifespan: 600,
-        gravityY: 800
+        //gravityY: 800
     });
 
-    var emitter1 = this.add.particles('particle2').createEmitter({
-        x: 400,
-        y: 300,
-        speed: { min: -800, max: 800 },
+    emitter1 = this.add.particles('particle2').createEmitter({
+        x: -1000,
+        y: -1000,
+        speed: { min: -500, max: 500 },
         angle: { min: 0, max: 360 },
-        scale: { start: 0.3, end: 0 },
+        scale: { start: 10, end: 0 },
         blendMode: 'SCREEN',
-        active: false,
+        //active: false,
         lifespan: 300,
-        gravityY: 800
+        //gravityY: 800
     });
     
     waveImage = this.add.image(400, 300, 'wave').setScrollFactor(0, 0);
@@ -342,28 +344,41 @@ function enemyHitCallback(enemyHit, bulletHit)
     // Reduce health of enemy
     if (bulletHit.active === true && enemyHit.active === true)
     {
-        enemyHit.health = enemyHit.health - 1;
+        enemyHit.health--;
         console.log("Enemy hp: ", enemyHit.health);
         hitSFX.play();
 
         // Kill enemy if health <= 0
         if (enemyHit.health <= 0)
         {
-            
-            score+= 300; //right now, all enemies give 300 points, but ideally this would change depending on the type of enemy killed.
-            console.log(activeEnemies);
+            if(enemyHit.texture.key == 'enemy'){
+                score+= 300;
+            }
+            else if(enemyHit.texture.key == 'enemy2'){
+                score+= 750;
+            }
+            else if(enemyHit.texture.key == 'enemy3'){
+                score+= 1500;
+            }
             deathSFX.play();
             killCount ++;
             currentEnemies--;
             activeEnemies--;
             enemies.splice(enemies.indexOf(enemyHit),1);
-            console.log(enemies.length);
+
+            //explode
+            emitter0.setPosition(enemyHit.x, enemyHit.y);
+            emitter1.setPosition(enemyHit.x, enemyHit.y);
+            for(let i = 0; i < 20; i++){
+                emitter0.explode();
+                emitter1.explode(); 
+            }
+            
             enemyHit.setVisible(false);
             enemyHit.setActive(false); 
             enemyHit.enemyCollider.destroy();  
             enemyHit.destroy();
             exp+=50;
-            
         }
 
         // Destroy bullet
@@ -411,7 +426,7 @@ function enemyFire(enemy, player, time, gameObject)
     {
         return;
     }
-
+    
     if ((time - enemy.lastFired) > enemy.fireRate)
     {
         enemy.lastFired = time;
@@ -429,8 +444,16 @@ function enemyFire(enemy, player, time, gameObject)
     }
 }
 
-function enemyFollow(enemy, player, speed, game){
-    game.physics.moveToObject(enemy, player, speed);
+function enemyFollow(enemy, player, game){
+    if (enemy.texture.key == 'enemy'){
+        game.physics.moveToObject(enemy, player, 100);
+    }
+    else if (enemy.texture.key == 'enemy2'){
+        game.physics.moveToObject(enemy, player, 300);
+    }
+    else if (enemy.texture.key == 'enemy3'){
+        game.physics.moveToObject(enemy, player, 500);
+    }
 }
 
 // Ensures sprite speed doesnt exceed maxVelocity while update is called
@@ -489,18 +512,8 @@ function update (time, delta)
 {
     // Rotates player to face towards reticle
     player.rotation = Phaser.Math.Angle.Between(player.x, player.y, reticle.x, reticle.y);
-
-    // Rotates enemy to face towards player
-    for(var i = 0; i<enemies.length; i++){    
-        //console.log(currentEnemies);
-        //if(enemies[i].active == true){
-            enemies[i].rotation = Phaser.Math.Angle.Between(enemies[i].x, enemies[i].y, player.x, player.y);
-            enemyFire(enemies[i],player, time, this);
-            enemyFollow(enemies[i], player, 100, this);
-        //}
-    }
     
-    // PROGRESSION SYSTEM
+    // PROGRESSION SYSTEM-- MAKE VALUES LONGER FOR FINAL
     if(killCount == 3 && !waveStart){
         wave = 2;
         maxEnemies = 2;
@@ -549,38 +562,48 @@ function update (time, delta)
                 //only then can we spawn the enemy
                 newEnemy = this.physics.add.sprite(spawnPosX,spawnPosY,'enemy');
                 newEnemy.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true);
-
+                
                 // enemy stats will be randomized based on how far into the game you are 
                 switch(wave){
                     case 2:
-                        newEnemy.fireRate = Math.floor(Math.random() * 1500) + 6000; //gen between 6000-7500
-                        newEnemy.lastFired = 0;
-                        newEnemy.health = Math.floor(Math.random() * 2) + 1; //gen between 1-2
-                        if(newEnemy.health == 2){
-                            newEnemy.setTexture('enemy2')
-                        }
-                        break
-                    case 3:
-                        newEnemy.fireRate = 7500; //all 7500
-                        newEnemy.lastFired = 0;
-                        newEnemy.health = 2; //all 2's
-                        newEnemy.setTexture('enemy2')
-                        break
-                    case 4:
-                        newEnemy.fireRate = Math.floor(Math.random() * 1500) + 7500; //gen between 7500-9000
-                        newEnemy.lastFired = 0;
-                        newEnemy.health = Math.floor(Math.random() * 3) + 1; //gen between 2-3
-                        if(newEnemy.health == 2){
+                        enemyType = newEnemy.health = Math.floor(Math.random() * 2) + 1;
+                        if(enemyType == 2){
+                            newEnemy.fireRate = 2500;
+                            newEnemy.lastFired = 0;
+                            newEnemy.health = 10;
                             newEnemy.setTexture('enemy2')
                         }
                         else{
+                            newEnemy.fireRate = 6000;
+                            newEnemy.lastFired = 0;
+                            newEnemy.health = 1;
+                        }
+                        break
+                    case 3:
+                        newEnemy.fireRate = 2500;
+                        newEnemy.lastFired = 0;
+                        newEnemy.health = 10; //all 20's
+                        newEnemy.setTexture('enemy2')
+                        break
+                    case 4:
+                        enemyType = newEnemy.health = Math.floor(Math.random() * 2) + 1;
+                        if(enemyType == 2){
+                            newEnemy.fireRate = 1000;
+                            newEnemy.lastFired = 0;
+                            newEnemy.health = 20;
                             newEnemy.setTexture('enemy3')
+                        }
+                        else{
+                            newEnemy.fireRate = 2500;
+                            newEnemy.lastFired = 0;
+                            newEnemy.health = 10;
+                            newEnemy.setTexture('enemy2')
                         }
                         break
                     case 5:
-                        newEnemy.fireRate = 9000; //all 9000
+                        newEnemy.fireRate = 1000;
                         newEnemy.lastFired = 0;
-                        newEnemy.health = 3; //all 3's
+                        newEnemy.health = 20; //all 50's
                         newEnemy.setTexture('enemy3')
                         break
                     default:
@@ -588,9 +611,6 @@ function update (time, delta)
                         newEnemy.lastFired = 0;
                         newEnemy.health = 1;
                 }
-                newEnemy.fireRate = 6000;
-                newEnemy.lastFired = 0;
-                newEnemy.health = 1;
 
                 newEnemy.enemyCollider = this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
                 enemies.push(newEnemy);
@@ -598,6 +618,16 @@ function update (time, delta)
                 activeEnemies++;
             }
             
+    }
+    
+    // Rotates enemy to face towards player
+    for(var i = 0; i<enemies.length; i++){    
+        //console.log(currentEnemies);
+        //if(enemies[i].active == true){
+            enemies[i].rotation = Phaser.Math.Angle.Between(enemies[i].x, enemies[i].y, player.x, player.y);
+            enemyFire(enemies[i], player, time, this);
+            enemyFollow(enemies[i], player, this);
+        //}
     }
     
     expBar.width = (exp/maxExp) * 400;
