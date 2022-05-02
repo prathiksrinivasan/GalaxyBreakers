@@ -8,11 +8,15 @@ var Loss = new Phaser.Class({
     },
     preload: function() {
         this.load.image('bg', 'Assets/Sprites/gameover.png');
+        this.load.audio('bgm', 'Assets/Sound/BGM.wav')
     },
     create: function() {
+        bgm = this.sound.add("bgm", {loop: true});
+        bgm.play();
         this.add.image(400, 300, 'bg');
 
         this.input.on('pointerdown', function (pointer) {
+            bgm.stop();
             this.scene.start("Title");
         }, this);
 

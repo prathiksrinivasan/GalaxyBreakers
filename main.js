@@ -26,6 +26,69 @@ var Bullet = new Phaser.Class({
     // Bullet Constructor
     function Bullet (scene)
     { 
+        Phaser.GameObjects.Image.call(this, scene, 0, 0, 'bulletB');
+        
+        this.speed = 1;
+        this.neg = false;
+        this.born = 0;
+        this.direction = 0;
+        this.xSpeed = 0;
+        this.ySpeed = 0;
+        this.setSize(12, 12, true);
+    },
+
+    // Fires a bullet from the player to the reticle
+    fire: function (shooter, target, offset, speed)
+    {
+        radOffset = offset*Math.PI/180;
+        this.setPosition(shooter.x, shooter.y); // Initial position
+        this.direction = Math.atan( (target.x-this.x) / (target.y-this.y))+radOffset;
+        
+        if(target.y >= this.y)
+        {
+            this.xSpeed = speed*Math.sin(this.direction);
+            this.ySpeed = speed*Math.cos(this.direction);
+        }
+        else
+        {
+            this.xSpeed = -speed*Math.sin(this.direction);
+            this.ySpeed = -speed*Math.cos(this.direction);
+        }
+
+        this.rotation = shooter.rotation-radOffset; // angle bullet with shooters rotation
+        this.born = 0; // Time since new bullet spawned
+        this.speed = speed;
+    },
+
+    // Updates the position of the bullet each cycle
+    update: function (time, delta)
+    {
+        this.x += this.xSpeed * delta;
+        this.y += this.ySpeed * delta;
+        this.born += delta;
+        if (this.born > 1800)
+        {
+            this.bulletKill();
+        }
+    },
+    
+    bulletKill: function(){
+        this.setActive(false);
+        this.setVisible(false);
+        this.destroy();
+    }
+
+});
+
+var EnemyBullet = new Phaser.Class({
+
+    Extends: Phaser.GameObjects.Image,
+
+    initialize:
+
+    // Bullet Constructor
+    function Bullet (scene)
+    { 
         Phaser.GameObjects.Image.call(this, scene, 0, 0, 'bullet');
         
         this.speed = 1;
@@ -79,6 +142,7 @@ var Bullet = new Phaser.Class({
     }
 
 });
+
 
 var Weapon = new Phaser.Class({
     initialize:
@@ -138,6 +202,7 @@ function preload ()
         { frameWidth: 66, frameHeight: 60 }
     );
     this.load.image('bullet', 'Assets/Sprites/bullet.png');
+    this.load.image('bulletB', 'Assets/Sprites/bullet6.png');
     this.load.image('target', 'Assets/Sprites/reticle.png');
     this.load.image('background', 'Assets/Sprites/spaceBG.jpg');
     this.load.image('heart', 'Assets/Sprites/heart.png');
@@ -170,7 +235,7 @@ function create ()
 
     // Add 2 groups for Bullet objects
     playerBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true, defaultKey: 'bullet' });
-    enemyBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true, defaultKey: 'bullet' });
+    enemyBullets = this.physics.add.group({ classType: EnemyBullet, runChildUpdate: true, defaultKey: 'bullet' });
     
     this.physics.add.overlap(playerBullets, enemyBullets, bulletCollideCallback);
 
