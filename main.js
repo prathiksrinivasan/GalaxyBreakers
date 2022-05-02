@@ -1,20 +1,12 @@
-var config = {
-    type: Phaser.AUTO,
-    parent: 'phaser-example',
-    width: 800,
-    height: 600,
-    physics: {
-      default: 'arcade',
-      arcade: {
-        gravity: { y: 0 },
-        debug: true
-      }
+var Main = new Phaser.Class({
+    Extends: Phaser.Scene,
+    initialize: function(){
+        Phaser.Scene.call(this, { "key": "Main" });
     },
-    scene: {
-        preload: preload,
-        create: create,
-        update: update,
-        extend: {
+    preload: preload,
+    create: create,
+    update: update,
+    extend: {
                     player: null,
                     healthpoints: null,
                     reticle: null,
@@ -23,10 +15,7 @@ var config = {
                     enemyBullets: null,
                     time: 0,
                 }
-    }
-};
-
-var game = new Phaser.Game(config);
+});
 
 var Bullet = new Phaser.Class({
 
@@ -168,27 +157,9 @@ function preload ()
     this.load.image('wave', 'Assets/Sprites/wave.png')
 }
 
-var maxEnemies;
-var currentEnemies;
-var activeEnemies;
-var score;
-var wave;
-var enemies = [];
-var start = false;
-var isPaused = false;
-var killCount;
-var weapons = [];
-var player;
-var waveStart;
-var setTime = [true, true, true, true];
-var waveImage;
-var initWave = true;
-var emitter0;
-var emitter1;
-
 function create ()
-{
-    
+{ 
+    var velocity = 0;
     enemies = [];
     start = false;
     isPaused = false;
@@ -514,22 +485,22 @@ function update (time, delta)
     player.rotation = Phaser.Math.Angle.Between(player.x, player.y, reticle.x, reticle.y);
     
     // PROGRESSION SYSTEM-- MAKE VALUES LONGER FOR FINAL
-    if(killCount == 3 && !waveStart){
+    if(killCount == 5 && !waveStart){
         wave = 2;
         maxEnemies = 2;
         waveStart = true;
     }
-    else if (killCount == 10 && !waveStart){
+    else if (killCount == 15 && !waveStart){
         wave = 3;
         maxEnemies = 3;
         waveStart = true;
     }
-    else if (killCount == 20 && !waveStart){
+    else if (killCount == 35 && !waveStart){
         wave = 4;
         maxEnemies = 4;
         waveStart = true;
     }
-    else if (killCount == 35 && !waveStart){
+    else if (killCount == 50 && !waveStart){
         wave = 5;
         maxEnemies = 5;
         waveStart = true;
@@ -684,7 +655,8 @@ function update (time, delta)
     if(player.health <= 0){
         //loss = this.add.image(400, 300, 'loss').setScrollFactor(0, 0);
         //game.scene.pause("default");
-        this.scene.restart();
+        bgm.stop();
+        this.scene.start("Loss", {score: score});
     }
     scorecounter.text = 'Score: '+score.toString();
     wavecounter.text = 'Wave: '+wave.toString();
