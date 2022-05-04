@@ -10,7 +10,7 @@ var config = {
         debug: true
       }
     },
-    scene: [Title, Main, Loss]
+    scene: [Title, Main, Pause, Loss, Credits]
 };
 
 var maxEnemies;

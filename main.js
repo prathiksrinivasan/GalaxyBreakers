@@ -341,6 +341,12 @@ function create ()
         }
     }, this);
     
+     //pause functionality
+    this.input.keyboard.on('keydown-P', function () {
+        this.scene.pause();
+        this.scene.launch('Pause');
+    }, this)
+    
     //game ui
     scorecounter = this.add.text(-100,-275, 'Score: '+score.toString(), {font: '32px Arial',fill: '#FFFFFF'}).setScrollFactor(0, 0);
     wavecounter = this.add.text(1000,-275, 'Wave: '+wave.toString(), {font: '32px Arial',fill: '#FFFFFF'}).setScrollFactor(0, 0);
