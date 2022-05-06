@@ -342,10 +342,10 @@ var Bullet3 = new Phaser.Class({
 var Weapon = new Phaser.Class({
     initialize:
     function Weapon (scene, bulletsGroup){
-        this.fireRate = 15;
-        this.numBullets = 4;
+        this.fireRate = 40;
+        this.numBullets = 1;
         this.nextFire = 0;
-        this.bulletSpeed = 1.25;
+        this.bulletSpeed = .75;
         this.bullets = bulletsGroup;
         this.maxBullets = 4;
     },
@@ -368,17 +368,31 @@ var Weapon = new Phaser.Class({
     },
     
     increaseBullets: function(){
-        this.numBullets += amount;
+        this.numBullets += 1;
     },
     
     increaseRate: function(){
-        this.fireRate /= amount;
+        this.fireRate -= 10;
     },
     
     increaseSpeed: function(){
-        this.bulletSpeed += amount;
+        this.bulletSpeed += .25;
     },
     
+    chooseUpgrade: function(UG){
+        if(this.bullets < 2){
+            this.increaseBullets();
+        }else{
+            switch(UG){
+                case(0):
+                    this.increaseBullets();
+                case(1):
+                    this.increaseRate();
+                case(2):
+                    this.increaseSpeed();
+            }                
+        }
+    },
     
 });
 
@@ -386,10 +400,10 @@ var Weapon = new Phaser.Class({
 var Weapon2 = new Phaser.Class({
     initialize:
     function Weapon (scene, bulletsGroup){
-        this.fireRate = 30;
-        this.numBullets = 3;
+        this.fireRate = 60;
+        this.numBullets = 0;
         this.nextFire = 0;
-        this.bulletSpeed = 1.5;
+        this.bulletSpeed = .75;
         this.bullets = bulletsGroup;
         this.maxSpeed = 1.5;
         this.maxBullets = 4;
@@ -424,6 +438,20 @@ var Weapon2 = new Phaser.Class({
     increaseSpeed: function(){
         this.bulletSpeed += .25;
     },
+    chooseUpgrade: function(UG){
+        if(this.bullets < 2){
+            this.increaseBullets();
+        }else{
+            switch(UG){
+                case(0):
+                    this.increaseBullets();
+                case(1):
+                    this.increaseRate();
+                case(2):
+                    this.increaseSpeed();
+            }                
+        }
+    },
     
     
 });
@@ -432,11 +460,11 @@ var Weapon2 = new Phaser.Class({
 var Weapon3 = new Phaser.Class({
     initialize:
     function Weapon (scene, bulletsGroup){
-        this.fireRate = 30;
-        this.numBullets = 2;
+        this.fireRate = 90;
+        this.numBullets = 0;
         this.nextFire = 0;
         this.bulletSpeed = 1;
-        this.explodeTime = 25;
+        this.explodeTime = 100;
         this.bullets = bulletsGroup;
         this.minTime = 25;
         this.maxBullets = 4;
@@ -472,12 +500,20 @@ var Weapon3 = new Phaser.Class({
         this.explodeTime -= 25;
     },
     
-    upgrade(choice){
-        switch(choice){
-            case 1:
-                this.increaseBullets
+    chooseUpgrade: function(UG){
+        if(this.bullets < 2){
+            this.increaseBullets();
+        }else{
+            switch(UG){
+                case(0):
+                    this.increaseBullets();
+                case(1):
+                    this.increaseRate();
+                case(2):
+                    this.increaseSpeed();
+            }                
         }
-    }
+    },
     
     
 });
@@ -541,6 +577,8 @@ function create ()
     enemyBullets = this.physics.add.group({ classType: EnemyBullet, runChildUpdate: true, defaultKey: 'bullet' });
     
     this.physics.add.overlap(playerBullets, enemyBullets, bulletCollideCallback);
+    this.physics.add.overlap(playerBullets2, enemyBullets, bulletCollideCallback);
+    this.physics.add.overlap(playerBullets3, enemyBullets, bulletCollideCallback);
 
     // Add background player, enemy, reticle, healthpoint sprites
     var background = this.add.image(1500, 1000, 'background');
@@ -555,6 +593,7 @@ function create ()
     expBG = this.add.rectangle(300,-250,400, 20, 0x000000).setStrokeStyle(4,0xffffff);
     exp = 1;
     maxExp = 100;
+    playerlvl = 0;
     expBar = this.add.rectangle(300,-250,400, 20, 0x00ffff);
     expBar.setScrollFactor(0,0);
     expBG.setScrollFactor(0,0);
@@ -593,6 +632,8 @@ function create ()
         newEnemy.lastFired = 0;
         newEnemy.health = 1;
         newEnemy.enemyCollider = this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
+        newEnemy.enemyCollider = this.physics.add.overlap(playerBullets2, newEnemy, enemyHitCallback);
+        newEnemy.enemyCollider = this.physics.add.overlap(playerBullets3, newEnemy, enemyHitCallback);
         enemies.push(newEnemy);
         currentEnemies++;
         activeEnemies++;
@@ -638,7 +679,7 @@ function create ()
             game.input.mouse.releasePointerLock();
     }, 0, this);
     
-
+    this.input.setPollAlways();
     // Move reticle upon locked pointer move
     this.input.on('pointermove', function (pointer) {
         if (this.input.mouse.locked)
@@ -960,6 +1001,8 @@ function update (time, delta)
                 }
 
                 newEnemy.enemyCollider = this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
+                newEnemy.enemyCollider = this.physics.add.overlap(playerBullets2, newEnemy, enemyHitCallback);
+                newEnemy.enemyCollider = this.physics.add.overlap(playerBullets3, newEnemy, enemyHitCallback);
                 enemies.push(newEnemy);
                 currentEnemies++;
                 activeEnemies++;
@@ -980,9 +1023,17 @@ function update (time, delta)
     expBar.width = (exp/maxExp) * 400;
     
     if(exp >= maxExp){
-        exp = 0;
-        maxExp += 50;
-        /*rand = Phaser.Math.Between(0,2);
+        exp = 1;
+        playerlvl += 1;
+        if(playerlvl <= 4){
+            maxExp = 100;
+        }else{    
+            maxExp += 50;
+        }
+        rand = Phaser.Math.Between(0,2);
+        randug = Phaser.Math.Between(0,2);
+        this.weapons[rand].chooseUpgrade(randug);
+        /*
         if(rand == 0){
             this.weapons[0].increaseBullets(1);
         }
@@ -1038,7 +1089,7 @@ function update (time, delta)
     wavecounter.text = 'Wave: '+wave.toString();
     
     // Rotates player and turret
-    turret.rotation = Phaser.Math.Angle.Between(player.x, player.y, reticle.x, reticle.y);
+    turret.rotation = Phaser.Math.Angle.Between(turret.x, turret.y, reticle.x, reticle.y);
     turret.setPosition(player.x+(-20*Math.cos(player.rotation)),player.y+(-20*Math.sin(player.rotation)));
     if(player.body.velocity.length() >= .02){
         player.rotation = Phaser.Math.Angle.Between(player.x, player.y, player.x+player.body.velocity.x,  player.y+player.body.velocity.y);
