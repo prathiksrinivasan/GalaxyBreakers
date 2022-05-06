@@ -1,20 +1,12 @@
-var config = {
-    type: Phaser.AUTO,
-    parent: 'phaser-example',
-    width: 800,
-    height: 600,
-    physics: {
-      default: 'arcade',
-      arcade: {
-        gravity: { y: 0 },
-        debug: true
-      }
+var Main = new Phaser.Class({
+    Extends: Phaser.Scene,
+    initialize: function(){
+        Phaser.Scene.call(this, { "key": "Main" });
     },
-    scene: {
-        preload: preload,
-        create: create,
-        update: update,
-        extend: {
+    preload: preload,
+    create: create,
+    update: update,
+    extend: {
                     player: null,
                     healthpoints: null,
                     reticle: null,
@@ -23,12 +15,10 @@ var config = {
                     enemyBullets: null,
                     time: 0,
                 }
-    }
-};
+});
 
-var game = new Phaser.Game(config);
 
-var Bullet = new Phaser.Class({
+var EnemyBullet = new Phaser.Class({
 
     Extends: Phaser.GameObjects.Image,
 
@@ -91,14 +81,273 @@ var Bullet = new Phaser.Class({
 
 });
 
+//Regular Bullet
+var Bullet = new Phaser.Class({
+
+    Extends: Phaser.GameObjects.Image,
+
+    initialize:
+
+    // Bullet Constructor
+    function Bullet (scene)
+    { 
+        Phaser.GameObjects.Image.call(this, scene, 0, 0, 'bulletB');
+        
+        this.speed = 1;
+        this.neg = false;
+        this.born = 0;
+        this.direction = 0;
+        this.xSpeed = 0;
+        this.ySpeed = 0;
+        this.setSize(12, 12, true);
+    },
+
+    // Fires a bullet from the player to the reticle
+    fire: function (shooter, target, offset, speed)
+    {
+        radOffset = offset*Math.PI/180;
+        this.setPosition(shooter.x, shooter.y); // Initial position
+        this.direction = Math.atan( (target.x-this.x) / (target.y-this.y))+radOffset;
+        
+        if(target.y >= this.y)
+        {
+            this.xSpeed = speed*Math.sin(this.direction);
+            this.ySpeed = speed*Math.cos(this.direction);
+        }
+        else
+        {
+            this.xSpeed = -speed*Math.sin(this.direction);
+            this.ySpeed = -speed*Math.cos(this.direction);
+        }
+
+        this.rotation = shooter.rotation-radOffset; // angle bullet with shooters rotation
+        this.born = 0; // Time since new bullet spawned
+        this.speed = speed;
+    },
+
+    // Updates the position of the bullet each cycle
+    update: function (time, delta)
+    {
+        this.x += this.xSpeed * delta;
+        this.y += this.ySpeed * delta;
+        this.born += delta;
+        if (this.born > 1800)
+        {
+            this.bulletKill();
+        }
+    },
+    
+    bulletKill: function(){
+        this.setActive(false);
+        this.setVisible(false);
+        this.destroy();
+    }
+
+});
+
+//Spinning Bullet
+var Bullet2 = new Phaser.Class({
+
+    Extends: Phaser.GameObjects.Image,
+
+    initialize:
+
+    // Bullet Constructor
+    function Bullet (scene)
+    { 
+        Phaser.GameObjects.Image.call(this, scene, 0, 0, 'bulletC');
+        
+        this.speed = 1;
+        this.neg = false;
+        this.born = 0;
+        this.direction = 0;
+        this.xSpeed = 0;
+        this.ySpeed = 0;
+        this.setSize(12, 12, true);
+        this.swapDir = false;
+        this.counter = 0;
+        this.rotateCW = false;
+    },
+
+    // Fires a bullet from the player to the reticle
+    fire: function (shooter, target, offset, speed)
+    {
+        radOffset = offset*Math.PI/180;
+        this.setPosition(shooter.x, shooter.y); // Initial position
+        this.direction = Math.atan( (target.x-this.x) / (target.y-this.y))+radOffset;
+        if(target.y >= this.y)
+        {
+            //this.xSpeed = speed*Math.sin(this.direction);
+            //this.ySpeed = speed*Math.cos(this.direction);
+            this.swapDir = true;
+            
+        }
+        else
+        {
+            //this.xSpeed = -speed*Math.sin(this.direction);
+            //this.ySpeed = -speed*Math.cos(this.direction);
+            this.swapDir = false;
+        }
+
+        this.rotation = shooter.rotation-radOffset; // angle bullet with shooters rotation
+        this.born = 0; // Time since new bullet spawned
+        this.speed = speed;
+    },
+    
+    changeDir: function(){
+        if(this.rotateCW){
+            this.direction += .1
+            this.rotation -=.1
+        }else{
+            this.rotation +=.1
+            this.direction -=.1
+        }
+        if(this.swapDir == true)
+        {
+            this.xSpeed = this.speed*Math.sin(this.direction);
+            this.ySpeed = this.speed*Math.cos(this.direction);
+        }
+        else
+        {
+            this.xSpeed = -this.speed*Math.sin(this.direction);
+            this.ySpeed = -this.speed*Math.cos(this.direction);
+        }
+    },
+
+    // Updates the position of the bullet each cycle
+    update: function (time, delta)
+    {
+        this.x += this.xSpeed * delta;
+        this.y += this.ySpeed * delta;
+        if(this.counter%30 == 0){
+            //this.direction = this.direction % (2*Math.PI);
+            this.changeDir();
+            this.counter = 0;
+        }
+        this.born += delta;
+        if (this.born > 1800)
+        {
+            this.bulletKill();
+        }
+    },
+    
+    bulletKill: function(){
+        this.setActive(false);
+        this.setVisible(false);
+        this.destroy();
+    }
+
+});
+
+//Exploding Bullet
+var Bullet3 = new Phaser.Class({
+
+    Extends: Phaser.GameObjects.Image,
+
+    initialize:
+
+    // Bullet Constructor
+    function Bullet (scene)
+    { 
+        Phaser.GameObjects.Image.call(this, scene, 0, 0, 'bulletD');
+        
+        this.speed = 1.25;
+        this.neg = false;
+        this.born = 0;
+        this.direction = 0;
+        this.xSpeed = 0;
+        this.ySpeed = 0;
+        this.setSize(12, 12, true);
+        this.swapDir = false;
+        this.counter = 0;
+        this.exploded = false;
+        this.explodeTime = 0;
+    },
+
+    // Fires a bullet from the player to the reticle
+    fire: function (shooter, target, offset, explodeTime)
+    {
+        radOffset = offset*Math.PI/180;
+        this.setPosition(shooter.x, shooter.y); // Initial position
+        this.direction = Math.atan( (target.x-this.x) / (target.y-this.y))+radOffset;
+        if(target.y >= this.y)
+        {
+            //this.xSpeed = speed*Math.sin(this.direction);
+            //this.ySpeed = speed*Math.cos(this.direction);
+            this.swapDir = true;
+            
+        }
+        else
+        {
+            //this.xSpeed = -speed*Math.sin(this.direction);
+            //this.ySpeed = -speed*Math.cos(this.direction);
+            this.swapDir = false;
+        }
+
+        this.rotation = shooter.rotation-radOffset; // angle bullet with shooters rotation
+        this.born = 0; // Time since new bullet spawned
+        this.changeDir();
+        //this.speed = speed;
+        this.explodeTime = explodeTime;
+    },
+    
+    changeDir: function(){
+        if(this.swapDir == true)
+        {
+            this.xSpeed = this.speed*Math.sin(this.direction);
+            this.ySpeed = this.speed*Math.cos(this.direction);
+        }
+        else
+        {
+            this.xSpeed = -this.speed*Math.sin(this.direction);
+            this.ySpeed = -this.speed*Math.cos(this.direction);
+        }
+    },
+
+    // Updates the position of the bullet each cycle
+    update: function (time, delta)
+    {
+        this.x += this.xSpeed * delta;
+        this.y += this.ySpeed * delta;
+        if(this.explodeTime-this.counter <= 0 && !this.exploded){
+            this.exploded = true;
+            this.counter = 0;
+        }
+        this.counter++;
+        if(this.counter <=10 && this.exploded){
+            this.scale = this.counter/2;
+            this.born = 2400;
+        }
+        if(this.speed > 0){    
+            this.speed -= .05*this.counter;
+        }
+        if(this.speed < 0){this.speed=0;}
+        this.changeDir();
+        this.born += delta;
+        if (this.born > 2700)
+        {
+            this.bulletKill();
+        }
+    },
+    
+    bulletKill: function(){
+        this.setActive(false);
+        this.setVisible(false);
+        this.destroy();
+    }
+
+});
+
+//Regular weapon
 var Weapon = new Phaser.Class({
     initialize:
     function Weapon (scene, bulletsGroup){
-        this.fireRate = 30;
+        this.fireRate = 40;
         this.numBullets = 1;
         this.nextFire = 0;
-        this.bulletSpeed = 1;
+        this.bulletSpeed = .75;
         this.bullets = bulletsGroup;
+        this.maxBullets = 4;
     },
     
     fire: function (shooter, target){
@@ -118,16 +367,152 @@ var Weapon = new Phaser.Class({
         }
     },
     
-    increaseBullets: function(amount){
-        this.numBullets += amount;
+    increaseBullets: function(){
+        this.numBullets += 1;
     },
     
-    increaseRate: function(amount){
-        this.fireRate /= amount;
+    increaseRate: function(){
+        this.fireRate -= 10;
     },
     
-    increaseSpeed: function(amount){
-        this.bulletSpeed += amount;
+    increaseSpeed: function(){
+        this.bulletSpeed += .25;
+    },
+    
+    chooseUpgrade: function(UG){
+        if(this.bullets < 2){
+            this.increaseBullets();
+        }else{
+            switch(UG){
+                case(0):
+                    this.increaseBullets();
+                case(1):
+                    this.increaseRate();
+                case(2):
+                    this.increaseSpeed();
+            }                
+        }
+    },
+    
+});
+
+//Spinning weapon
+var Weapon2 = new Phaser.Class({
+    initialize:
+    function Weapon (scene, bulletsGroup){
+        this.fireRate = 60;
+        this.numBullets = 0;
+        this.nextFire = 0;
+        this.bulletSpeed = .75;
+        this.bullets = bulletsGroup;
+        this.maxSpeed = 1.5;
+        this.maxBullets = 4;
+        this.minRate = 20;
+    },
+    
+    fire: function (shooter, target){
+        if(this.nextFire < this.fireRate) {
+            this.nextFire++;
+        }
+        else{
+            var startAngleOffset = -90;
+            for(var i = 0; i<this.numBullets; i++){
+                var angle = 0 - startAngleOffset + (90*(i));
+                var bullet = this.bullets.get().setActive(true).setVisible(true);
+                if(bullet){
+                    bullet.fire(shooter, target , angle, this.bulletSpeed);
+                }
+            }
+            this.nextFire = 0;
+        }
+    },
+    
+    increaseBullets: function(){
+        this.numBullets += 1;
+    },
+    
+    increaseRate: function(){
+        this.fireRate -= 10;
+    },
+    
+    increaseSpeed: function(){
+        this.bulletSpeed += .25;
+    },
+    chooseUpgrade: function(UG){
+        if(this.bullets < 2){
+            this.increaseBullets();
+        }else{
+            switch(UG){
+                case(0):
+                    this.increaseBullets();
+                case(1):
+                    this.increaseRate();
+                case(2):
+                    this.increaseSpeed();
+            }                
+        }
+    },
+    
+    
+});
+
+//Exploding weapon
+var Weapon3 = new Phaser.Class({
+    initialize:
+    function Weapon (scene, bulletsGroup){
+        this.fireRate = 90;
+        this.numBullets = 0;
+        this.nextFire = 0;
+        this.bulletSpeed = 1;
+        this.explodeTime = 100;
+        this.bullets = bulletsGroup;
+        this.minTime = 25;
+        this.maxBullets = 4;
+        this.minRate = 30;
+    },
+    
+    fire: function (shooter, target){
+        if(this.nextFire < this.fireRate) {
+            this.nextFire++;
+        }
+        else{
+            var startAngleOffset = 60*(this.numBullets-1)/2;
+            for(var i = 0; i<this.numBullets; i++){
+                var angle = 180 - startAngleOffset + (60*(i));
+                var bullet = this.bullets.get().setActive(true).setVisible(true);
+                if(bullet){
+                    bullet.fire(shooter, target , angle, this.explodeTime);
+                }
+            }
+            this.nextFire = 0;
+        }
+    },
+    
+    increaseBullets: function(){
+        this.numBullets += 1;
+    },
+    
+    increaseRate: function(){
+        this.fireRate -= 20;
+    },
+    
+    increaseSpeed: function(){
+        this.explodeTime -= 25;
+    },
+    
+    chooseUpgrade: function(UG){
+        if(this.bullets < 2){
+            this.increaseBullets();
+        }else{
+            switch(UG){
+                case(0):
+                    this.increaseBullets();
+                case(1):
+                    this.increaseRate();
+                case(2):
+                    this.increaseSpeed();
+            }                
+        }
     },
     
     
@@ -136,8 +521,11 @@ var Weapon = new Phaser.Class({
 function preload ()
 {
     // Load in images and sprites
-    this.load.spritesheet('player_handgun', 'Assets/Sprites/wipGunner.png',
-        { frameWidth: 66, frameHeight: 60 }
+    this.load.spritesheet('player_handgun', 'Assets/Sprites/ship.png',
+        { frameWidth: 606, frameHeight: 535 }
+    );
+    this.load.spritesheet('turret', 'Assets/Sprites/gunner.png',
+        { frameWidth: 606, frameHeight: 535 }
     );
     this.load.spritesheet('enemy', 'Assets/Sprites/wipEnemy.png',
         { frameWidth: 66, frameHeight: 60 }
@@ -149,6 +537,9 @@ function preload ()
         { frameWidth: 66, frameHeight: 60 }
     );
     this.load.image('bullet', 'Assets/Sprites/bullet.png');
+    this.load.image('bulletB', 'Assets/Sprites/bullet6.png');
+    this.load.image('bulletC', 'Assets/Sprites/bulletC.png');
+    this.load.image('bulletD', 'Assets/Sprites/bulletD.png');
     this.load.image('target', 'Assets/Sprites/reticle.png');
     this.load.image('background', 'Assets/Sprites/spaceBG.jpg');
     this.load.image('heart', 'Assets/Sprites/heart.png');
@@ -168,27 +559,9 @@ function preload ()
     this.load.image('wave', 'Assets/Sprites/wave.png')
 }
 
-var maxEnemies;
-var currentEnemies;
-var activeEnemies;
-var score;
-var wave;
-var enemies = [];
-var start = false;
-var isPaused = false;
-var killCount;
-var weapons = [];
-var player;
-var waveStart;
-var setTime = [true, true, true, true];
-var waveImage;
-var initWave = true;
-var emitter0;
-var emitter1;
-
 function create ()
-{
-    
+{ 
+    var velocity = 0;
     enemies = [];
     start = false;
     isPaused = false;
@@ -199,13 +572,18 @@ function create ()
 
     // Add 2 groups for Bullet objects
     playerBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true, defaultKey: 'bullet' });
-    enemyBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true, defaultKey: 'bullet' });
+    playerBullets2 = this.physics.add.group({ classType: Bullet2, runChildUpdate: true, defaultKey: 'bullet2' });
+    playerBullets3 = this.physics.add.group({ classType: Bullet3, runChildUpdate: true, defaultKey: 'bullet3' });
+    enemyBullets = this.physics.add.group({ classType: EnemyBullet, runChildUpdate: true, defaultKey: 'bullet' });
     
     this.physics.add.overlap(playerBullets, enemyBullets, bulletCollideCallback);
+    this.physics.add.overlap(playerBullets2, enemyBullets, bulletCollideCallback);
+    this.physics.add.overlap(playerBullets3, enemyBullets, bulletCollideCallback);
 
     // Add background player, enemy, reticle, healthpoint sprites
     var background = this.add.image(1500, 1000, 'background');
     player = this.physics.add.sprite(1500, 1000, 'player_handgun');
+    turret = this.add.sprite(1500, 1000, 'turret');
     reticle = this.physics.add.sprite(800, 700, 'target');
     hp1 = this.add.image(-350, -250, 'heart').setScrollFactor(0, 0);
     hp2 = this.add.image(-300, -250, 'heart').setScrollFactor(0, 0);
@@ -215,17 +593,21 @@ function create ()
     expBG = this.add.rectangle(300,-250,400, 20, 0x000000).setStrokeStyle(4,0xffffff);
     exp = 1;
     maxExp = 100;
+    playerlvl = 0;
     expBar = this.add.rectangle(300,-250,400, 20, 0x00ffff);
     expBar.setScrollFactor(0,0);
     expBG.setScrollFactor(0,0);
     
     this.weapons = [];
     this.weapons.push(new Weapon(this.game, playerBullets));
+    this.weapons.push(new Weapon2(this.game, playerBullets2));
+    this.weapons.push(new Weapon3(this.game, playerBullets3));
     
 
     // Set image/sprite properties
     background.setOrigin(0.5, 0.5).setDisplaySize(6000, 4000);
     player.setOrigin(0.5, 0.5).setDisplaySize(132, 120).setCollideWorldBounds(true).setDrag(500, 500);
+    turret.setOrigin(.3,.5).setDisplaySize(132,120);
     //var enemies = [];
     maxEnemies = 1;
     currentEnemies = 0;
@@ -250,6 +632,8 @@ function create ()
         newEnemy.lastFired = 0;
         newEnemy.health = 1;
         newEnemy.enemyCollider = this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
+        newEnemy.enemyCollider = this.physics.add.overlap(playerBullets2, newEnemy, enemyHitCallback);
+        newEnemy.enemyCollider = this.physics.add.overlap(playerBullets3, newEnemy, enemyHitCallback);
         enemies.push(newEnemy);
         currentEnemies++;
         activeEnemies++;
@@ -273,7 +657,7 @@ function create ()
     hitSFX = this.sound.add("hit", {loop: false});
     deathSFX = this.sound.add("death", {loop: false});
     bgm = this.sound.add("bgm", {loop: true});
-    bgm.play();
+    //bgm.play();
     
     //NEW MOVEMENT -------------------------------------
     player.setFrictionX(100);
@@ -295,7 +679,7 @@ function create ()
             game.input.mouse.releasePointerLock();
     }, 0, this);
     
-
+    this.input.setPollAlways();
     // Move reticle upon locked pointer move
     this.input.on('pointermove', function (pointer) {
         if (this.input.mouse.locked)
@@ -304,6 +688,12 @@ function create ()
             reticle.y += pointer.movementY;
         }
     }, this);
+    
+     //pause functionality
+    this.input.keyboard.on('keydown-P', function () {
+        this.scene.pause();
+        this.scene.launch('Pause');
+    }, this)
     
     //game ui
     scorecounter = this.add.text(-100,-275, 'Score: '+score.toString(), {font: '32px Arial',fill: '#FFFFFF'}).setScrollFactor(0, 0);
@@ -509,27 +899,25 @@ function midWaveAnnouncement(time, image, timeActivator){
 }
 
 function update (time, delta)
-{
-    // Rotates player to face towards reticle
-    player.rotation = Phaser.Math.Angle.Between(player.x, player.y, reticle.x, reticle.y);
+{   
     
     // PROGRESSION SYSTEM-- MAKE VALUES LONGER FOR FINAL
-    if(killCount == 3 && !waveStart){
+    if(killCount == 5 && !waveStart){
         wave = 2;
         maxEnemies = 2;
         waveStart = true;
     }
-    else if (killCount == 10 && !waveStart){
+    else if (killCount == 15 && !waveStart){
         wave = 3;
         maxEnemies = 3;
         waveStart = true;
     }
-    else if (killCount == 20 && !waveStart){
+    else if (killCount == 35 && !waveStart){
         wave = 4;
         maxEnemies = 4;
         waveStart = true;
     }
-    else if (killCount == 35 && !waveStart){
+    else if (killCount == 50 && !waveStart){
         wave = 5;
         maxEnemies = 5;
         waveStart = true;
@@ -613,6 +1001,8 @@ function update (time, delta)
                 }
 
                 newEnemy.enemyCollider = this.physics.add.overlap(playerBullets, newEnemy, enemyHitCallback);
+                newEnemy.enemyCollider = this.physics.add.overlap(playerBullets2, newEnemy, enemyHitCallback);
+                newEnemy.enemyCollider = this.physics.add.overlap(playerBullets3, newEnemy, enemyHitCallback);
                 enemies.push(newEnemy);
                 currentEnemies++;
                 activeEnemies++;
@@ -633,9 +1023,17 @@ function update (time, delta)
     expBar.width = (exp/maxExp) * 400;
     
     if(exp >= maxExp){
-        exp = 0;
-        maxExp += 50;
+        exp = 1;
+        playerlvl += 1;
+        if(playerlvl <= 4){
+            maxExp = 100;
+        }else{    
+            maxExp += 50;
+        }
         rand = Phaser.Math.Between(0,2);
+        randug = Phaser.Math.Between(0,2);
+        this.weapons[rand].chooseUpgrade(randug);
+        /*
         if(rand == 0){
             this.weapons[0].increaseBullets(1);
         }
@@ -644,7 +1042,7 @@ function update (time, delta)
         }
         if(rand == 2){
             this.weapons[0].increaseSpeed(.5);
-        }
+        }*/
     }
     
     //Make reticle move with player
@@ -678,16 +1076,24 @@ function update (time, delta)
     }
     
     for(var i = 0; i<this.weapons.length; i++){
-        this.weapons[i].fire(player, reticle);
+        this.weapons[i].fire(turret, reticle);
     }
     
     if(player.health <= 0){
         //loss = this.add.image(400, 300, 'loss').setScrollFactor(0, 0);
         //game.scene.pause("default");
-        this.scene.restart();
+        bgm.stop();
+        this.scene.start("Loss", {score: score});
     }
     scorecounter.text = 'Score: '+score.toString();
     wavecounter.text = 'Wave: '+wave.toString();
+    
+    // Rotates player and turret
+    turret.rotation = Phaser.Math.Angle.Between(turret.x, turret.y, reticle.x, reticle.y);
+    turret.setPosition(player.x+(-20*Math.cos(player.rotation)),player.y+(-20*Math.sin(player.rotation)));
+    if(player.body.velocity.length() >= .02){
+        player.rotation = Phaser.Math.Angle.Between(player.x, player.y, player.x+player.body.velocity.x,  player.y+player.body.velocity.y);
+    } 
 }
 
 function render () {
