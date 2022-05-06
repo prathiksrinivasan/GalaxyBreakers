@@ -527,14 +527,14 @@ function preload ()
     this.load.spritesheet('turret', 'Assets/Sprites/gunner.png',
         { frameWidth: 606, frameHeight: 535 }
     );
-    this.load.spritesheet('enemy', 'Assets/Sprites/wipEnemy.png',
-        { frameWidth: 66, frameHeight: 60 }
+    this.load.spritesheet('enemy', 'Assets/Sprites/Enemy1.png',
+        { frameWidth: 606, frameHeight: 535 }
     );
-    this.load.spritesheet('enemy2', 'Assets/Sprites/wipEnemy2.png',
-        { frameWidth: 66, frameHeight: 60 }
+    this.load.spritesheet('enemy2', 'Assets/Sprites/Enemy2.png',
+        { frameWidth: 606, frameHeight: 535 }
     );
-    this.load.spritesheet('enemy3', 'Assets/Sprites/wipEnemy3.png',
-        { frameWidth: 66, frameHeight: 60 }
+    this.load.spritesheet('enemy3', 'Assets/Sprites/Enemy3.png',
+        { frameWidth: 606, frameHeight: 535 }
     );
     this.load.image('bullet', 'Assets/Sprites/bullet.png');
     this.load.image('bulletB', 'Assets/Sprites/bullet6.png');
@@ -555,6 +555,8 @@ function preload ()
     
     this.load.image('particle1', 'Assets/Sprites/particle1.png')
     this.load.image('particle2', 'Assets/Sprites/particle2.png')
+    this.load.image('particle3', 'Assets/Sprites/particle3.png')
+    this.load.image('particle4', 'Assets/Sprites/particle4.png')
     
     this.load.image('wave', 'Assets/Sprites/wave.png')
 }
@@ -590,11 +592,11 @@ function create ()
     hp3 = this.add.image(-250, -250, 'heart').setScrollFactor(0, 0);
     
     
-    expBG = this.add.rectangle(300,-250,400, 20, 0x000000).setStrokeStyle(4,0xffffff);
+    expBG = this.add.rectangle(450,800,400, 20, 0x000000).setStrokeStyle(4,0xffffff);
     exp = 1;
     maxExp = 100;
     playerlvl = 0;
-    expBar = this.add.rectangle(300,-250,400, 20, 0x00ffff);
+    expBar = this.add.rectangle(450,800,400, 20, 0x00ffff);
     expBar.setScrollFactor(0,0);
     expBG.setScrollFactor(0,0);
     
@@ -721,6 +723,31 @@ function create ()
         blendMode: 'SCREEN',
         //active: false,
         lifespan: 300,
+        //gravityY: 800
+    });
+    
+    //UPGRADE VFX
+    emitter2 = this.add.particles('particle3').createEmitter({
+        x: -1000,
+        y: -1000,
+        speed: { min: -500, max: 500 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 5, end: 0 },
+        blendMode: 'SCREEN',
+        //active: false,
+        lifespan: 600,
+        //gravityY: 800
+    });
+    
+    emitter3 = this.add.particles('particle4').createEmitter({
+        x: -1000,
+        y: -1000,
+        speed: { min: -500, max: 500 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 5, end: 0 },
+        blendMode: 'SCREEN',
+        //active: false,
+        lifespan: 600,
         //gravityY: 800
     });
     
@@ -1033,6 +1060,12 @@ function update (time, delta)
         rand = Phaser.Math.Between(0,2);
         randug = Phaser.Math.Between(0,2);
         this.weapons[rand].chooseUpgrade(randug);
+        emitter2.setPosition(player.x, player.y);
+        emitter3.setPosition(player.x, player.y);
+        for(let i = 0; i < 20; i++){
+                emitter2.explode();
+                emitter3.explode(); 
+            }
         /*
         if(rand == 0){
             this.weapons[0].increaseBullets(1);
